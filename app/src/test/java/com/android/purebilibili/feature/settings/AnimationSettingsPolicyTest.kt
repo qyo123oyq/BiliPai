@@ -75,10 +75,11 @@ class AnimationSettingsPolicyTest {
             "app/src/main/java/com/android/purebilibili/core/store/SettingsManager.kt"
         )
 
-        assertTrue(animationSource.contains("底栏液态玻璃预设"))
-        assertTrue(animationSource.contains("BottomBarLiquidGlassPreset.entries"))
-        assertTrue(settingsManagerSource.contains("通透玻璃"))
-        assertTrue(settingsManagerSource.contains("更轻的模糊、更低的遮罩和更清晰的背景折射"))
+        assertFalse(animationSource.contains("底栏液态玻璃预设"))
+        assertFalse(animationSource.contains("BottomBarLiquidGlassPreset.entries"))
+        assertTrue(animationSource.contains("listOf(BottomBarLiquidGlassPreset.BILIPAI_TUNED)"))
+        assertTrue(settingsManagerSource.contains("TODO: 通透底栏液态玻璃已移除"))
+        assertFalse(settingsManagerSource.contains("更轻的模糊、更低的遮罩和更清晰的背景折射"))
         val forbiddenExternalName = listOf("Na", "gram", "X").joinToString("")
         assertFalse(animationSource.contains(forbiddenExternalName))
         assertFalse(animationSource.contains(forbiddenExternalName.lowercase()))

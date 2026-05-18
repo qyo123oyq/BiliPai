@@ -101,14 +101,10 @@ enum class BottomBarLiquidGlassPreset(
         0,
         "BiliPai 调校",
         "保留当前多层折射、色散和指示器动效"
-    ),
-    BACKDROP_NATIVE(
-        1,
-        "通透玻璃",
-        "更轻的模糊、更低的遮罩和更清晰的背景折射"
     );
 
     companion object {
+        // TODO: 通透底栏液态玻璃已移除；旧存储值 1 暂时回退到 BiliPai 调校，后续重新设计后再分配新实现。
         fun fromValue(value: Int): BottomBarLiquidGlassPreset =
             entries.find { it.value == value } ?: BILIPAI_TUNED
     }
@@ -2163,8 +2159,9 @@ object SettingsManager {
         context: Context,
         preset: BottomBarLiquidGlassPreset
     ) {
+        val effectivePreset = BottomBarLiquidGlassPreset.fromValue(preset.value)
         context.settingsDataStore.edit { preferences ->
-            preferences[KEY_BOTTOM_BAR_LIQUID_GLASS_PRESET] = preset.value
+            preferences[KEY_BOTTOM_BAR_LIQUID_GLASS_PRESET] = effectivePreset.value
         }
     }
 

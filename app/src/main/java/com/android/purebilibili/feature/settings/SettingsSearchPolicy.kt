@@ -611,10 +611,10 @@ private val SETTINGS_SEARCH_INDEX: List<SettingsSearchEntry> = listOf(
     ),
     SettingsSearchEntry(
         target = SettingsSearchTarget.ANIMATION,
-        title = "底栏液态玻璃预设",
-        subtitle = "BiliPai 调校 / 通透玻璃",
+        title = "底栏液态玻璃",
+        subtitle = "当前仅保留 BiliPai 调校",
         section = "动画与效果",
-        aliases = listOf("底栏玻璃效果", "底栏液态玻璃", "通透玻璃", "轻量折射", "低磨砂"),
+        aliases = listOf("底栏玻璃效果", "底栏液态玻璃", "BiliPai 调校"),
         focusId = SettingsSearchFocusIds.ANIMATION_VISUAL_EFFECTS
     ),
     SettingsSearchEntry(

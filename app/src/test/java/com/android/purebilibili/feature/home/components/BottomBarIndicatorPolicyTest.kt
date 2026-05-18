@@ -219,122 +219,6 @@ class BottomBarIndicatorPolicyTest {
     }
 
     @Test
-    fun `transparent glass preset reads captured bottom bar content like tuned preset`() {
-        assertTrue(
-            shouldUseBottomBarCombinedIndicatorBackdrop(
-                preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE
-            )
-        )
-        assertTrue(
-            shouldUseBottomBarCombinedIndicatorBackdrop(
-                preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED
-            )
-        )
-    }
-
-    @Test
-    fun `transparent glass preset keeps themed foreground above indicator`() {
-        assertTrue(
-            shouldRenderBottomBarForegroundAboveIndicator(
-                preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE
-            )
-        )
-        assertFalse(
-            shouldRenderBottomBarForegroundAboveIndicator(
-                preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED
-            )
-        )
-    }
-
-    @Test
-    fun `transparent glass indicator adds readability surface without changing tuned preset`() {
-        val transparentLight = resolveBottomBarIndicatorReadabilitySurfaceColor(
-            preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE,
-            darkTheme = false,
-            indicatorProgress = 1f
-        )
-        val transparentDark = resolveBottomBarIndicatorReadabilitySurfaceColor(
-            preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE,
-            darkTheme = true,
-            indicatorProgress = 1f
-        )
-        val tuned = resolveBottomBarIndicatorReadabilitySurfaceColor(
-            preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED,
-            darkTheme = false,
-            indicatorProgress = 1f
-        )
-
-        assertTrue(transparentLight.alpha > 0.3f)
-        assertTrue(transparentLight.red > 0.9f)
-        assertTrue(transparentLight.green > 0.9f)
-        assertTrue(transparentDark.alpha > 0.33f)
-        assertTrue(transparentDark.red > 0.85f)
-        assertTrue(transparentDark.green > 0.85f)
-        assertTrue(transparentDark.blue > 0.85f)
-        assertEquals(0f, tuned.alpha, 0.001f)
-    }
-
-    @Test
-    fun `transparent glass preset keeps indicator lens like tuned preset`() {
-        // 指示器保持 BiliPai 调教的独立层，只折射底栏捕获内容，不折射 feed 视频。
-        assertTrue(
-            shouldUseBottomBarIndicatorLens(
-                preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE
-            )
-        )
-        // BiliPai 调校仍保留旧的指示器 lens 折射。
-        assertTrue(
-            shouldUseBottomBarIndicatorLens(
-                preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED
-            )
-        )
-    }
-
-    @Test
-    fun `transparent glass selected item keeps theme color over gray-white capsule`() {
-        val unselected = Color(0xFF1F1F1F)
-        val theme = Color(0xFF00A88F)
-        val color = resolveBottomBarTransparentGlassContentColor(
-            unselectedColor = unselected,
-            selectedColor = theme,
-            themeWeight = 1f,
-            verticalProgress = 1f,
-            darkTheme = false
-        )
-
-        assertTrue(color.green > color.red)
-        assertTrue(color.green > color.blue)
-        assertTrue(color.green >= theme.green * 0.72f)
-    }
-
-    @Test
-    fun `transparent glass unselected content ignores vertical scroll color adjustment`() {
-        val unselected = Color(0xFF4A4A4A)
-        val theme = Color(0xFF00A88F)
-        val top = resolveBottomBarTransparentGlassContentColor(
-            unselectedColor = unselected,
-            selectedColor = theme,
-            themeWeight = 0f,
-            verticalProgress = 0f,
-            darkTheme = false
-        )
-        val scrolled = resolveBottomBarTransparentGlassContentColor(
-            unselectedColor = unselected,
-            selectedColor = theme,
-            themeWeight = 0f,
-            verticalProgress = 1f,
-            darkTheme = false
-        )
-
-        assertEquals(top.red, scrolled.red, 0.001f)
-        assertEquals(top.green, scrolled.green, 0.001f)
-        assertEquals(top.blue, scrolled.blue, 0.001f)
-        assertEquals(unselected.red, scrolled.red, 0.001f)
-        assertEquals(unselected.green, scrolled.green, 0.001f)
-        assertEquals(unselected.blue, scrolled.blue, 0.001f)
-    }
-
-    @Test
     fun `heavy bottom bar effects require settled interaction progress`() {
         assertFalse(
             shouldRenderBottomBarHeavyInteractiveEffects(
@@ -511,50 +395,6 @@ class BottomBarIndicatorPolicyTest {
     }
 
     @Test
-    fun `transparent glass preset keeps bilipai motion path but strengthens dynamic lens`() {
-        val profile = resolveBottomBarRefractionMotionProfile(
-            position = 1.32f,
-            velocity = 860f,
-            isDragging = true
-        )
-        val effectiveProfile = resolveBottomBarEffectiveRefractionMotionProfile(
-            preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE,
-            profile = profile
-        )
-
-        assertEquals(profile.progress, effectiveProfile.progress, 0.001f)
-        assertEquals(profile.exportPanelOffsetFraction, effectiveProfile.exportPanelOffsetFraction, 0.001f)
-        assertEquals(profile.indicatorPanelOffsetFraction, effectiveProfile.indicatorPanelOffsetFraction, 0.001f)
-        assertEquals(profile.visiblePanelOffsetFraction, effectiveProfile.visiblePanelOffsetFraction, 0.001f)
-        assertEquals(profile.visibleSelectionEmphasis, effectiveProfile.visibleSelectionEmphasis, 0.001f)
-        assertEquals(profile.exportSelectionEmphasis, effectiveProfile.exportSelectionEmphasis, 0.001f)
-        assertEquals(profile.exportCaptureWidthScale, effectiveProfile.exportCaptureWidthScale, 0.001f)
-        assertEquals(profile.forceChromaticAberration, effectiveProfile.forceChromaticAberration)
-        assertTrue(effectiveProfile.indicatorLensAmountScale > profile.indicatorLensAmountScale)
-        assertTrue(effectiveProfile.indicatorLensHeightScale > profile.indicatorLensHeightScale)
-        assertTrue(effectiveProfile.chromaticBoostScale > profile.chromaticBoostScale)
-    }
-
-    @Test
-    fun `transparent glass preset reuses bilipai panel drift`() {
-        val tuned = resolveBottomBarPresetPanelOffsets(
-            preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED,
-            rawPanelOffsetPx = 12f
-        )
-        val transparent = resolveBottomBarPresetPanelOffsets(
-            preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE,
-            rawPanelOffsetPx = 12f
-        )
-
-        assertEquals(12f, tuned.visiblePanelOffsetPx, 0.001f)
-        assertEquals(12f, tuned.exportPanelOffsetPx, 0.001f)
-        assertEquals(12f, tuned.indicatorPanelOffsetPx, 0.001f)
-        assertEquals(tuned.visiblePanelOffsetPx, transparent.visiblePanelOffsetPx, 0.001f)
-        assertEquals(tuned.exportPanelOffsetPx, transparent.exportPanelOffsetPx, 0.001f)
-        assertEquals(tuned.indicatorPanelOffsetPx, transparent.indicatorPanelOffsetPx, 0.001f)
-    }
-
-    @Test
     fun `liquid glass lens progress follows backdrop preset progress`() {
         val idle = resolveBottomBarLiquidGlassLensProgress(motionProgress = 0f)
         val moving = resolveBottomBarLiquidGlassLensProgress(motionProgress = 1f)
@@ -562,32 +402,6 @@ class BottomBarIndicatorPolicyTest {
         assertEquals(0f, idle, 0.001f)
         assertTrue(idle < moving)
         assertEquals(1f, moving, 0.001f)
-    }
-
-    @Test
-    fun `vertical glass motion is neutral when glass is disabled`() {
-        val profile = resolveBottomBarVerticalGlassMotionProfile(
-            scrollOffsetPx = 600f,
-            glassEnabled = false
-        )
-
-        assertEquals(0f, profile.progress, 0.001f)
-    }
-
-    @Test
-    fun `vertical glass motion only resolves backdrop preset progress`() {
-        val idle = resolveBottomBarVerticalGlassMotionProfile(
-            scrollOffsetPx = 0f,
-            glassEnabled = true
-        )
-        val scrolled = resolveBottomBarVerticalGlassMotionProfile(
-            scrollOffsetPx = 180f,
-            glassEnabled = true
-        )
-
-        assertEquals(0f, idle.progress, 0.001f)
-        assertTrue(scrolled.progress > idle.progress)
-        assertEquals(1f, scrolled.progress, 0.001f)
     }
 
     @Test
@@ -663,7 +477,7 @@ class BottomBarIndicatorPolicyTest {
         ).first { it.exists() }.readText()
         val highlightModifierSource = source
             .substringAfter("private fun Modifier.bottomBarInteractiveHighlight(")
-            .substringBefore("internal fun resolveBottomBarVerticalGlassMotionProfile(")
+            .substringBefore("internal fun resolveBottomBarBackdropPresetCaptureLens(")
 
         assertTrue(highlightModifierSource.indexOf("drawContent()") >= 0)
         assertTrue(
@@ -687,35 +501,6 @@ class BottomBarIndicatorPolicyTest {
     }
 
     @Test
-    fun `transparent glass surface reduces blur so nagram refraction remains visible`() {
-        val idle = resolveBottomBarBackdropNativeSurfaceSpec(
-            blurRadiusDp = 18f,
-            verticalProgress = 0f
-        )
-        val scrolled = resolveBottomBarBackdropNativeSurfaceSpec(
-            blurRadiusDp = 18f,
-            verticalProgress = 1f
-        )
-
-        // 极轻微模糊：主要视觉由 Nagram 折射承担，避免退化成磨砂模糊。
-        assertEquals(2.5f, idle.blurRadiusDp, 0.001f)
-        assertEquals(2.5f, scrolled.blurRadiusDp, 0.001f)
-        // 折射交给双矩形着色器，面板不再用 AndroidLiquidGlass lens。
-        assertEquals(0f, idle.refractionHeightDp, 0.001f)
-        assertEquals(0f, scrolled.refractionHeightDp, 0.001f)
-        assertEquals(0f, idle.refractionAmountDp, 0.001f)
-        assertEquals(0f, scrolled.refractionAmountDp, 0.001f)
-        assertEquals(0.48f, idle.surfaceAlphaMultiplier, 0.001f)
-        assertEquals(0.48f, scrolled.surfaceAlphaMultiplier, 0.001f)
-        // 明亮的玻璃高光边——iOS26 液态玻璃的标志特征。
-        assertEquals(0.8f, idle.highlightAlpha, 0.001f)
-        assertEquals(0.8f, scrolled.highlightAlpha, 0.001f)
-        assertEquals(0.045f, idle.shadowAlpha, 0.001f)
-        assertEquals(0.045f, scrolled.shadowAlpha, 0.001f)
-        assertFalse(scrolled.chromaticAberration)
-    }
-
-    @Test
     fun `home vertical scroll does not scale bottom bar shell or capture layers`() {
         val progress = resolveBottomBarBackdropPresetProgress(
             motionProgress = 0f,
@@ -731,52 +516,6 @@ class BottomBarIndicatorPolicyTest {
         assertEquals(0f, progress.indicatorProgress, 0.001f)
         assertEquals(0f, indicator.refractionHeightDp, 0.001f)
         assertEquals(0f, indicator.refractionAmountDp, 0.001f)
-    }
-
-    @Test
-    fun `transparent glass vertical scroll activates fixed indicator refraction`() {
-        val tuned = resolveBottomBarEffectiveBackdropPresetProgress(
-            preset = BottomBarLiquidGlassPreset.BILIPAI_TUNED,
-            motionProgress = 0f,
-            verticalProgress = 1f,
-            pressProgress = 0f
-        )
-        val transparent = resolveBottomBarEffectiveBackdropPresetProgress(
-            preset = BottomBarLiquidGlassPreset.BACKDROP_NATIVE,
-            motionProgress = 0f,
-            verticalProgress = 1f,
-            pressProgress = 0f
-        )
-        val transparentIndicator = resolveBottomBarBackdropPresetIndicatorLens(
-            progress = transparent.indicatorProgress
-        )
-
-        assertEquals(0f, tuned.indicatorProgress, 0.001f)
-        assertEquals(1f, transparent.indicatorProgress, 0.001f)
-        assertTrue(transparentIndicator.refractionHeightDp > 0f)
-        assertTrue(transparentIndicator.refractionAmountDp > 0f)
-    }
-
-    @Test
-    fun `transparent glass vertical scroll can render indicator backdrop while idle`() {
-        assertFalse(
-            shouldRenderBottomBarIndicatorBackdrop(
-                glassEnabled = true,
-                hasContentBackdrop = true,
-                indicatorProgress = 1f,
-                isBottomBarInteractionActive = false,
-                allowIdleGlassEffect = false
-            )
-        )
-        assertTrue(
-            shouldRenderBottomBarIndicatorBackdrop(
-                glassEnabled = true,
-                hasContentBackdrop = true,
-                indicatorProgress = 1f,
-                isBottomBarInteractionActive = false,
-                allowIdleGlassEffect = true
-            )
-        )
     }
 
     @Test

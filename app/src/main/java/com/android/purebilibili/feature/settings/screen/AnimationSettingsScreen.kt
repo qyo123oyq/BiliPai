@@ -274,7 +274,7 @@ fun AnimationSettingsContent(
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "底栏液态玻璃预设",
+                                            text = "当前底栏材质",
                                             style = MaterialTheme.typography.bodyLarge,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -288,7 +288,7 @@ fun AnimationSettingsContent(
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    BottomBarLiquidGlassPreset.entries.forEach { preset ->
+                                    listOf(BottomBarLiquidGlassPreset.BILIPAI_TUNED).forEach { preset ->
                                         val isSelected = bottomBarLiquidGlassPreset == preset
                                         Row(
                                             modifier = Modifier

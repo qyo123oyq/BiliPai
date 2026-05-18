@@ -90,8 +90,20 @@ class SettingsSearchPolicyTest {
     }
 
     @Test
-    fun queryByClearBottomBarGlass_focusesBottomBarSettings() {
-        val result = resolveSettingsSearchResults("通透玻璃").firstOrNull()
+    fun queryByClearBottomBarGlass_noLongerFocusesBottomBarPreset() {
+        val results = resolveSettingsSearchResults("通透玻璃")
+
+        assertTrue(
+            results.none {
+                it.target == SettingsSearchTarget.ANIMATION &&
+                    it.focusId == SettingsSearchFocusIds.ANIMATION_VISUAL_EFFECTS
+            }
+        )
+    }
+
+    @Test
+    fun queryByBottomBarLiquidGlass_stillFocusesVisualEffects() {
+        val result = resolveSettingsSearchResults("底栏液态玻璃").firstOrNull()
 
         assertEquals(SettingsSearchTarget.ANIMATION, result?.target)
         assertEquals(SettingsSearchFocusIds.ANIMATION_VISUAL_EFFECTS, result?.focusId)
