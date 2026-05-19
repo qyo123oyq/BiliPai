@@ -11,6 +11,8 @@ import com.android.purebilibili.data.model.response.SpaceDynamicArchive
 import com.android.purebilibili.data.model.response.SpaceDynamicArticle
 import com.android.purebilibili.data.model.response.SpaceDynamicOpus
 import com.android.purebilibili.data.model.response.SpaceDynamicOpusSummary
+import com.android.purebilibili.data.model.response.DynamicMajorBadge
+import com.android.purebilibili.feature.dynamic.components.resolveDynamicArchiveBadgeLabel
 import com.android.purebilibili.feature.dynamic.components.DynamicCardMediaAction
 import com.android.purebilibili.feature.dynamic.components.resolveDynamicCardMediaAction
 import kotlin.test.Test
@@ -214,5 +216,39 @@ class SpaceDynamicLoadPolicyTest {
         assertEquals("长图文标题", article?.title)
         assertEquals("完整长图文摘要", article?.desc)
         assertEquals(listOf("https://i0.hdslb.com/bfs/article/cover.jpg"), mediaAction.images)
+    }
+
+    @Test
+    fun resolveSpaceDynamicCardItems_preserves_space_archive_charge_badge() {
+        val mapped = resolveSpaceDynamicCardItems(
+            listOf(
+                SpaceDynamicItem(
+                    id_str = "1200000000000000000",
+                    type = "DYNAMIC_TYPE_AV",
+                    modules = SpaceDynamicModules(
+                        module_dynamic = SpaceDynamicContent(
+                            major = SpaceDynamicMajor(
+                                type = "MAJOR_TYPE_ARCHIVE",
+                                archive = SpaceDynamicArchive(
+                                    aid = "123",
+                                    bvid = "BV1xx411c7mD",
+                                    title = "空间充电动态",
+                                    badge = DynamicMajorBadge(text = "充电专属"),
+                                    isChargingArc = true,
+                                    elecArcType = 1
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        ).first()
+
+        val archive = mapped.modules.module_dynamic?.major?.archive
+
+        assertEquals("充电专属", archive?.badge?.text)
+        assertEquals(true, archive?.isChargingArc)
+        assertEquals(1, archive?.elecArcType)
+        assertEquals("充电专属", archive?.let(::resolveDynamicArchiveBadgeLabel))
     }
 }

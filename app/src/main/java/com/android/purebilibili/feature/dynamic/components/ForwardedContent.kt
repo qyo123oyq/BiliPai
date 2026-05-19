@@ -140,6 +140,7 @@ fun ForwardedContent(
             VideoCardLarge(
                 archive = archive,
                 publishTs = author?.pub_ts ?: 0L,
+                cornerBadgeText = resolveDynamicArchiveBadgeLabel(archive),
                 onClick = { playableBvid?.let(onVideoClick) }
             )
             Spacer(modifier = Modifier.height(8.dp))

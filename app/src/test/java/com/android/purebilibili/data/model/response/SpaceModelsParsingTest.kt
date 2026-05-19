@@ -87,6 +87,40 @@ class SpaceModelsParsingTest {
     }
 
     @Test
+    fun decodeSpaceVideoResponse_acceptsChargingArcFields() {
+        val payload = """
+            {
+              "code": 0,
+              "message": "0",
+              "data": {
+                "list": {
+                  "vlist": [
+                    {
+                      "aid": 123,
+                      "bvid": "BV1xx411c7mD",
+                      "title": "充电视频",
+                      "is_charging_arc": true,
+                      "elec_arc_type": 1,
+                      "is_ugcpay": true,
+                      "ugc_pay": 1,
+                      "ugc_pay_preview": 0
+                    }
+                  ]
+                }
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<SpaceVideoResponse>(payload)
+        val video = response.data?.list?.vlist?.single()
+
+        assertEquals(true, video?.isChargingArc)
+        assertEquals(1, video?.elecArcType)
+        assertEquals(true, video?.isUgcpay)
+        assertEquals(1, video?.ugcPay)
+    }
+
+    @Test
     fun decodeSpaceDynamicResponse_acceptsArticleMajorFromSpaceDynamic() {
         val payload = """
             {
@@ -137,5 +171,51 @@ class SpaceModelsParsingTest {
             ),
             article?.covers
         )
+    }
+
+    @Test
+    fun decodeSpaceDynamicResponse_acceptsArchiveChargeBadge() {
+        val payload = """
+            {
+              "code": 0,
+              "message": "0",
+              "data": {
+                "items": [
+                  {
+                    "id_str": "1200000000000000000",
+                    "type": "DYNAMIC_TYPE_AV",
+                    "modules": {
+                      "module_dynamic": {
+                        "major": {
+                          "type": "MAJOR_TYPE_ARCHIVE",
+                          "archive": {
+                            "aid": "123",
+                            "bvid": "BV1xx411c7mD",
+                            "title": "空间充电动态",
+                            "badge": {
+                              "text": "充电专属"
+                            },
+                            "is_charging_arc": true,
+                            "elec_arc_type": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<SpaceDynamicResponse>(payload)
+        val archive = response.data?.items?.single()
+            ?.modules
+            ?.module_dynamic
+            ?.major
+            ?.archive
+
+        assertEquals("充电专属", archive?.badge?.text)
+        assertEquals(true, archive?.isChargingArc)
+        assertEquals(1, archive?.elecArcType)
     }
 }

@@ -226,6 +226,51 @@ class DynamicModulesFlexibleSerializerTest {
     }
 
     @Test
+    fun dynamicDetailResponse_parsesArchiveChargeBadgeFromDesktopPayload() {
+        val payload = """
+            {
+              "code": 0,
+              "data": {
+                "item": {
+                  "id_str": "1200000000000000000",
+                  "type": "DYNAMIC_TYPE_AV",
+                  "modules": {
+                    "module_dynamic": {
+                      "major": {
+                        "type": "MAJOR_TYPE_ARCHIVE",
+                        "archive": {
+                          "aid": "123",
+                          "bvid": "BV1xx411c7mD",
+                          "title": "充电稿件",
+                          "badge": {
+                            "text": "充电专属",
+                            "color": "#FFFFFF",
+                            "bg_color": "#FB7299"
+                          },
+                          "is_charging_arc": true,
+                          "elec_arc_type": 1,
+                          "ugc_pay": 1,
+                          "ugc_pay_preview": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<DynamicDetailResponse>(payload)
+        val archive = response.data?.item?.modules?.module_dynamic?.major?.archive
+
+        assertEquals("充电专属", archive?.badge?.text)
+        assertEquals("#FB7299", archive?.badge?.bgColor)
+        assertEquals(true, archive?.isChargingArc)
+        assertEquals(1, archive?.elecArcType)
+        assertEquals(1, archive?.ugcPay)
+    }
+
+    @Test
     fun dynamicDetailResponse_prefersFullOpusParagraphsOverPreviewDescWhenBothExist() {
         val payload = """
             {

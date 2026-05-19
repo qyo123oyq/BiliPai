@@ -261,6 +261,7 @@ fun DynamicCardV2(
             VideoCardLarge(
                 archive = archive,
                 publishTs = author?.pub_ts ?: 0L,
+                cornerBadgeText = resolveDynamicArchiveBadgeLabel(archive),
                 onClick = {
                     playableBvid?.let(onVideoClick)
                         ?: onDynamicDetailClick?.invoke(item.id_str)

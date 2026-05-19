@@ -1155,6 +1155,7 @@ private fun SpaceContent(
                                         SpaceHomeVideoCard(
                                             video = video,
                                             progressState = resolveSpaceVideoProgressState(video, localProgressMs),
+                                            badgeLabel = resolveSpaceVideoChargeBadgeLabel(video),
                                             onClick = { playVideoFromSpace(video.bvid) }
                                         )
                                     }
@@ -1168,6 +1169,7 @@ private fun SpaceContent(
                                             play = video.play.toLong(),
                                             secondaryCount = video.comment.toLong(),
                                             progressState = resolveSpaceVideoProgressState(video, localProgressMs),
+                                            badgeLabel = resolveSpaceVideoChargeBadgeLabel(video),
                                             onClick = { playVideoFromSpace(video.bvid) },
                                             sharedTransitionKey = resolveSpaceArchiveSharedTransitionKey(video.bvid),
                                             sharedTransitionScope = sharedTransitionScope,
@@ -2374,6 +2376,7 @@ private fun SpaceSectionHeader(
 private fun SpaceHomeVideoCard(
     video: SpaceVideoItem,
     progressState: VideoProgressDisplayState,
+    badgeLabel: String? = null,
     onClick: () -> Unit
 ) {
     Column(
@@ -2399,6 +2402,24 @@ private fun SpaceHomeVideoCard(
                     .fillMaxWidth()
                     .height(118.dp)
             )
+
+            if (!badgeLabel.isNullOrBlank()) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Text(
+                        text = badgeLabel,
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
 
             Surface(
                 modifier = Modifier
@@ -2671,6 +2692,7 @@ private fun SpaceArchiveListItemRow(
     play: Long,
     secondaryCount: Long,
     progressState: VideoProgressDisplayState? = null,
+    badgeLabel: String? = null,
     onClick: () -> Unit,
     sharedTransitionKey: String? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
@@ -2744,6 +2766,23 @@ private fun SpaceArchiveListItemRow(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+            if (!badgeLabel.isNullOrBlank()) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Text(
+                        text = badgeLabel,
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
             if (duration.isNotBlank()) {
                 Surface(
                     modifier = Modifier

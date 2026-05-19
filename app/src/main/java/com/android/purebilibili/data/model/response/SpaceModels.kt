@@ -287,7 +287,17 @@ data class SpaceVideoItem(
     val created: Long = 0,    // 发布时间戳
     val author: String = "",
     val typeid: Int = 0,      //  分区 ID
-    val typename: String = "" //  分区名称
+    val typename: String = "", //  分区名称
+    @SerialName("is_charging_arc")
+    val isChargingArc: Boolean = false,
+    @SerialName("elec_arc_type")
+    val elecArcType: Int = 0,
+    @SerialName("is_ugcpay")
+    val isUgcpay: Boolean = false,
+    @SerialName("ugc_pay")
+    val ugcPay: Int = 0,
+    @SerialName("ugc_pay_preview")
+    val ugcPayPreview: Int = 0
 )
 
 // /x/relation/stat 粉丝关注数
@@ -603,7 +613,18 @@ data class SpaceDynamicArchive(
     val cover: String = "",
     val desc: String = "",
     val duration_text: String = "",
-    val stat: SpaceDynamicArchiveStat = SpaceDynamicArchiveStat()
+    val stat: SpaceDynamicArchiveStat = SpaceDynamicArchiveStat(),
+    val badge: DynamicMajorBadge? = null,
+    @SerialName("is_charging_arc")
+    val isChargingArc: Boolean = false,
+    @SerialName("elec_arc_type")
+    val elecArcType: Int = 0,
+    @SerialName("is_ugcpay")
+    val isUgcpay: Boolean = false,
+    @SerialName("ugc_pay")
+    val ugcPay: Int = 0,
+    @SerialName("ugc_pay_preview")
+    val ugcPayPreview: Int = 0
 )
 
 @kotlinx.serialization.Serializable

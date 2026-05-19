@@ -127,7 +127,13 @@ internal fun resolveSpaceDynamicCardItem(item: SpaceDynamicItem): DynamicItem {
                                     stat = ArchiveStat(
                                         play = archive.stat.play,
                                         danmaku = archive.stat.danmaku
-                                    )
+                                    ),
+                                    badge = archive.badge,
+                                    isChargingArc = archive.isChargingArc,
+                                    elecArcType = archive.elecArcType,
+                                    isUgcpay = archive.isUgcpay,
+                                    ugcPay = archive.ugcPay,
+                                    ugcPayPreview = archive.ugcPayPreview
                                 )
                             },
                             draw = major.draw?.let { draw ->
