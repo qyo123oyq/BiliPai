@@ -1158,6 +1158,41 @@ fun AppNavigation(
                                 },
                                 globalHazeState = mainHazeState
                             )
+                            BiliPaiNavEntryContentRole.FAVORITE -> {
+                                val favoriteViewModel: FavoriteViewModel = viewModel()
+                                CommonListScreen(
+                                    viewModel = favoriteViewModel,
+                                    onBack = { performSystemBackAction() },
+                                    globalHazeState = mainHazeState,
+                                    scrollToTopChannel = favoriteScrollChannel,
+                                    onVideoClick = { bvid, cid, cover -> navigateToVideo(bvid, cid, cover) },
+                                    onFavoriteFolderClick = { mediaId, ownerMid, title, ownerName ->
+                                        navController.navigate(
+                                            ScreenRoutes.SeasonSeriesDetail.createRoute(
+                                                type = "favorite",
+                                                id = mediaId,
+                                                mid = ownerMid,
+                                                title = title,
+                                                ownerName = ownerName
+                                            )
+                                        )
+                                    },
+                                    onCollectionClick = { collectionId, collectionMid, title, ownerName ->
+                                        navController.navigate(
+                                            ScreenRoutes.SeasonSeriesDetail.createRoute(
+                                                type = "season",
+                                                id = collectionId,
+                                                mid = collectionMid,
+                                                title = title,
+                                                ownerName = ownerName
+                                            )
+                                        )
+                                    },
+                                    onPlayAllAudioClick = { bvid, cid ->
+                                        navigateToVideo(bvid, cid, "", startAudio = true)
+                                    }
+                                )
+                            }
                             else -> Unit
                         }
                     }
