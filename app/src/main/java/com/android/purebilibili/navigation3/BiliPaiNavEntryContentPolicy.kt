@@ -21,6 +21,11 @@ internal enum class BiliPaiNavEntryContentRole {
     HISTORY,
     FAVORITE,
     WATCH_LATER,
+    LIVE_LIST,
+    LIVE_SEARCH,
+    LIVE_AREA,
+    LIVE_AREA_DETAIL,
+    LIVE_FOLLOWING,
     LOGIN,
     STORY,
     PARTITION,
@@ -56,6 +61,11 @@ internal fun resolveBiliPaiNavEntryContentRole(key: BiliPaiNavKey): BiliPaiNavEn
         BiliPaiNavKey.History -> BiliPaiNavEntryContentRole.HISTORY
         BiliPaiNavKey.Favorite -> BiliPaiNavEntryContentRole.FAVORITE
         BiliPaiNavKey.WatchLater -> BiliPaiNavEntryContentRole.WATCH_LATER
+        BiliPaiNavKey.LiveList -> BiliPaiNavEntryContentRole.LIVE_LIST
+        BiliPaiNavKey.LiveSearch -> BiliPaiNavEntryContentRole.LIVE_SEARCH
+        BiliPaiNavKey.LiveArea -> BiliPaiNavEntryContentRole.LIVE_AREA
+        is BiliPaiNavKey.LiveAreaDetail -> BiliPaiNavEntryContentRole.LIVE_AREA_DETAIL
+        BiliPaiNavKey.LiveFollowing -> BiliPaiNavEntryContentRole.LIVE_FOLLOWING
         BiliPaiNavKey.Login -> BiliPaiNavEntryContentRole.LOGIN
         BiliPaiNavKey.Story -> BiliPaiNavEntryContentRole.STORY
         BiliPaiNavKey.Partition -> BiliPaiNavEntryContentRole.PARTITION

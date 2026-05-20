@@ -61,6 +61,19 @@ class BiliPaiNavKeyMappingPolicyTest {
     }
 
     @Test
+    fun liveSecondaryRoutes_mapToNavigation3Keys() {
+        assertEquals(BiliPaiNavKey.LiveList, legacyRouteToBiliPaiNavKey(ScreenRoutes.LiveList.route))
+        assertEquals(BiliPaiNavKey.LiveSearch, legacyRouteToBiliPaiNavKey(ScreenRoutes.LiveSearch.route))
+        assertEquals(BiliPaiNavKey.LiveArea, legacyRouteToBiliPaiNavKey(ScreenRoutes.LiveArea.route))
+        val liveAreaDetailRoute = "live_area_detail/1/2?title=%E7%BD%91%E6%B8%B8"
+        assertEquals(
+            BiliPaiNavKey.LiveAreaDetail(parentAreaId = 1, areaId = 2, title = "网游"),
+            legacyRouteToBiliPaiNavKey(liveAreaDetailRoute)
+        )
+        assertEquals(BiliPaiNavKey.LiveFollowing, legacyRouteToBiliPaiNavKey(ScreenRoutes.LiveFollowing.route))
+    }
+
+    @Test
     fun cardReturnTargets_matchExistingSharedElementDestinations() {
         assertEquals(true, isCardReturnTargetNavKey(BiliPaiNavKey.Home))
         assertEquals(true, isCardReturnTargetNavKey(BiliPaiNavKey.Search))

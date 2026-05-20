@@ -1679,6 +1679,75 @@ fun AppNavigation(
                                 },
                                 globalHazeState = mainHazeState
                             )
+                        BiliPaiNavEntryContentRole.LIVE_LIST ->
+                            com.android.purebilibili.feature.live.LiveListScreen(
+                                onBack = { performSystemBackAction() },
+                                onLiveClick = { roomId, title, uname ->
+                                    pushNavigation3Key(BiliPaiNavKey.Live(roomId, title, uname))
+                                },
+                                onSearchClick = { pushNavigation3Key(BiliPaiNavKey.LiveSearch) },
+                                onAreaListClick = { pushNavigation3Key(BiliPaiNavKey.LiveArea) },
+                                onFollowingClick = { pushNavigation3Key(BiliPaiNavKey.LiveFollowing) },
+                                onAreaDetailClick = { parentAreaId, areaId, title ->
+                                    pushNavigation3Key(
+                                        BiliPaiNavKey.LiveAreaDetail(
+                                            parentAreaId = parentAreaId,
+                                            areaId = areaId,
+                                            title = title
+                                        )
+                                    )
+                                },
+                                globalHazeState = mainHazeState
+                            )
+                        BiliPaiNavEntryContentRole.LIVE_SEARCH ->
+                            com.android.purebilibili.feature.live.LiveSearchScreen(
+                                onBack = { performSystemBackAction() },
+                                onLiveClick = { roomId, title, uname ->
+                                    pushNavigation3Key(BiliPaiNavKey.Live(roomId, title, uname))
+                                },
+                                onUserClick = { mid -> pushNavigation3Key(BiliPaiNavKey.Space(mid)) }
+                            )
+                        BiliPaiNavEntryContentRole.LIVE_AREA ->
+                            com.android.purebilibili.feature.live.LiveAreaScreen(
+                                onBack = { performSystemBackAction() },
+                                onAreaClick = { parentAreaId, areaId, title ->
+                                    pushNavigation3Key(
+                                        BiliPaiNavKey.LiveAreaDetail(
+                                            parentAreaId = parentAreaId,
+                                            areaId = areaId,
+                                            title = title
+                                        )
+                                    )
+                                }
+                            )
+                        BiliPaiNavEntryContentRole.LIVE_AREA_DETAIL -> {
+                                val liveAreaDetailKey = key as BiliPaiNavKey.LiveAreaDetail
+                                com.android.purebilibili.feature.live.LiveAreaDetailScreen(
+                                    parentAreaId = liveAreaDetailKey.parentAreaId,
+                                    areaId = liveAreaDetailKey.areaId,
+                                    title = liveAreaDetailKey.title,
+                                    onBack = { performSystemBackAction() },
+                                    onAreaClick = { parentAreaId, areaId, title ->
+                                        pushNavigation3Key(
+                                            BiliPaiNavKey.LiveAreaDetail(
+                                                parentAreaId = parentAreaId,
+                                                areaId = areaId,
+                                                title = title
+                                            )
+                                        )
+                                    },
+                                    onLiveClick = { roomId, title, uname ->
+                                        pushNavigation3Key(BiliPaiNavKey.Live(roomId, title, uname))
+                                    }
+                                )
+                            }
+                        BiliPaiNavEntryContentRole.LIVE_FOLLOWING ->
+                            com.android.purebilibili.feature.live.LiveFollowingScreen(
+                                onBack = { performSystemBackAction() },
+                                onLiveClick = { roomId, title, uname ->
+                                    pushNavigation3Key(BiliPaiNavKey.Live(roomId, title, uname))
+                                }
+                            )
                         BiliPaiNavEntryContentRole.FAVORITE -> {
                                 val favoriteViewModel: FavoriteViewModel = viewModel()
                                 CommonListScreen(

@@ -110,6 +110,35 @@ internal sealed interface BiliPaiNavKey : NavKey {
     }
 
     @Serializable
+    data object LiveList : BiliPaiNavKey {
+        override val routeBase: String = "live_list"
+    }
+
+    @Serializable
+    data object LiveSearch : BiliPaiNavKey {
+        override val routeBase: String = "live_search"
+    }
+
+    @Serializable
+    data object LiveArea : BiliPaiNavKey {
+        override val routeBase: String = "live_area"
+    }
+
+    @Serializable
+    data class LiveAreaDetail(
+        val parentAreaId: Int,
+        val areaId: Int,
+        val title: String = ""
+    ) : BiliPaiNavKey {
+        override val routeBase: String = "live_area_detail"
+    }
+
+    @Serializable
+    data object LiveFollowing : BiliPaiNavKey {
+        override val routeBase: String = "live_following"
+    }
+
+    @Serializable
     data object Partition : BiliPaiNavKey {
         override val routeBase: String = "partition"
     }

@@ -27,6 +27,11 @@ internal fun BiliPaiNavKey.toLegacyRoute(): String {
         BiliPaiNavKey.History -> ScreenRoutes.History.route
         BiliPaiNavKey.Favorite -> ScreenRoutes.Favorite.route
         BiliPaiNavKey.WatchLater -> ScreenRoutes.WatchLater.route
+        BiliPaiNavKey.LiveList -> ScreenRoutes.LiveList.route
+        BiliPaiNavKey.LiveSearch -> ScreenRoutes.LiveSearch.route
+        BiliPaiNavKey.LiveArea -> ScreenRoutes.LiveArea.route
+        is BiliPaiNavKey.LiveAreaDetail -> ScreenRoutes.LiveAreaDetail.createRoute(parentAreaId, areaId, title)
+        BiliPaiNavKey.LiveFollowing -> ScreenRoutes.LiveFollowing.route
         BiliPaiNavKey.Partition -> ScreenRoutes.Partition.route
         BiliPaiNavKey.Story -> ScreenRoutes.Story.route
         BiliPaiNavKey.AudioMode -> ScreenRoutes.AudioMode.route
@@ -78,6 +83,17 @@ internal fun legacyRouteToBiliPaiNavKey(route: String?): BiliPaiNavKey {
         normalized == ScreenRoutes.History.route -> BiliPaiNavKey.History
         normalized == ScreenRoutes.Favorite.route -> BiliPaiNavKey.Favorite
         normalized == ScreenRoutes.WatchLater.route -> BiliPaiNavKey.WatchLater
+        normalized == ScreenRoutes.LiveList.route -> BiliPaiNavKey.LiveList
+        normalized == ScreenRoutes.LiveSearch.route -> BiliPaiNavKey.LiveSearch
+        normalized == ScreenRoutes.LiveArea.route -> BiliPaiNavKey.LiveArea
+        segments.firstOrNull() == "live_area_detail" && segments.size >= 3 -> {
+            BiliPaiNavKey.LiveAreaDetail(
+                parentAreaId = segments[1].toIntOrNull() ?: 0,
+                areaId = segments[2].toIntOrNull() ?: 0,
+                title = query["title"].orEmpty()
+            )
+        }
+        normalized == ScreenRoutes.LiveFollowing.route -> BiliPaiNavKey.LiveFollowing
         normalized == ScreenRoutes.Partition.route -> BiliPaiNavKey.Partition
         normalized == ScreenRoutes.Story.route -> BiliPaiNavKey.Story
         normalized == ScreenRoutes.AudioMode.route -> BiliPaiNavKey.AudioMode
