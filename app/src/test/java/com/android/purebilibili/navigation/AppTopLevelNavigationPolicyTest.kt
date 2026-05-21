@@ -296,7 +296,7 @@ class AppTopLevelNavigationPolicyTest {
             )
         )
         assertEquals(
-            1,
+            3,
             resolveBottomPagerBeyondViewportPageCount(
                 contentReady = true,
                 isNavigating = false,
@@ -318,7 +318,7 @@ class AppTopLevelNavigationPolicyTest {
             )
         )
         assertEquals(
-            1,
+            3,
             resolveBottomPagerBeyondViewportPageCount(
                 contentReady = true,
                 isNavigating = true,
@@ -334,7 +334,7 @@ class AppTopLevelNavigationPolicyTest {
     }
 
     @Test
-    fun bottomPagerDuringNavigation_composesOnlyStartAndTarget() {
+    fun bottomPagerDuringNavigation_composesOnlyStartAndTargetBeforeReady() {
         assertTrue(
             shouldComposeBottomPagerPage(
                 item = BottomNavItem.HOME,
@@ -342,7 +342,8 @@ class AppTopLevelNavigationPolicyTest {
                 currentPage = 1,
                 selectedPage = 3,
                 isNavigating = true,
-                navigationStartPage = 0
+                navigationStartPage = 0,
+                contentReady = false
             )
         )
         assertTrue(
@@ -352,7 +353,8 @@ class AppTopLevelNavigationPolicyTest {
                 currentPage = 1,
                 selectedPage = 3,
                 isNavigating = true,
-                navigationStartPage = 0
+                navigationStartPage = 0,
+                contentReady = false
             )
         )
         assertFalse(
@@ -362,7 +364,8 @@ class AppTopLevelNavigationPolicyTest {
                 currentPage = 1,
                 selectedPage = 3,
                 isNavigating = true,
-                navigationStartPage = 0
+                navigationStartPage = 0,
+                contentReady = false
             )
         )
         assertFalse(
@@ -372,7 +375,34 @@ class AppTopLevelNavigationPolicyTest {
                 currentPage = 1,
                 selectedPage = 3,
                 isNavigating = true,
-                navigationStartPage = 0
+                navigationStartPage = 0,
+                contentReady = false
+            )
+        )
+    }
+
+    @Test
+    fun bottomPagerDuringNavigation_composesIntermediatePagesAfterReady() {
+        assertTrue(
+            shouldComposeBottomPagerPage(
+                item = BottomNavItem.DYNAMIC,
+                page = 1,
+                currentPage = 1,
+                selectedPage = 3,
+                isNavigating = true,
+                navigationStartPage = 0,
+                contentReady = true
+            )
+        )
+        assertTrue(
+            shouldComposeBottomPagerPage(
+                item = BottomNavItem.HISTORY,
+                page = 2,
+                currentPage = 1,
+                selectedPage = 3,
+                isNavigating = true,
+                navigationStartPage = 0,
+                contentReady = true
             )
         )
     }
@@ -386,7 +416,8 @@ class AppTopLevelNavigationPolicyTest {
                 currentPage = 3,
                 selectedPage = 3,
                 isNavigating = false,
-                navigationStartPage = 3
+                navigationStartPage = 3,
+                contentReady = true
             )
         )
     }
@@ -413,7 +444,8 @@ class AppTopLevelNavigationPolicyTest {
                 currentPage = 0,
                 selectedPage = 1,
                 isNavigating = false,
-                navigationStartPage = 0
+                navigationStartPage = 0,
+                contentReady = true
             )
         )
         assertTrue(
@@ -423,7 +455,8 @@ class AppTopLevelNavigationPolicyTest {
                 currentPage = 3,
                 selectedPage = 1,
                 isNavigating = false,
-                navigationStartPage = 3
+                navigationStartPage = 3,
+                contentReady = false
             )
         )
     }

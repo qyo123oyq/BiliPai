@@ -111,8 +111,12 @@ internal fun resolveBottomPagerBeyondViewportPageCount(
     selectedPage: Int
 ): Int {
     if (!contentReady) return 0
-    if (!isNavigating) return 1
-    return kotlin.math.abs(selectedPage - currentPage).coerceAtLeast(1)
+    val navigationDistance = if (isNavigating) {
+        kotlin.math.abs(selectedPage - currentPage)
+    } else {
+        0
+    }
+    return navigationDistance.coerceAtLeast(3)
 }
 
 internal fun resolveBottomPagerRenderBudget(isNavigating: Boolean): BottomPagerRenderBudget {
@@ -131,15 +135,16 @@ internal fun shouldComposeBottomPagerPage(
     currentPage: Int,
     selectedPage: Int,
     isNavigating: Boolean,
-    navigationStartPage: Int
+    navigationStartPage: Int,
+    contentReady: Boolean
 ): Boolean {
-    if (isNavigating) {
-        return page == navigationStartPage || page == selectedPage
-    }
     if (item == BottomNavItem.STORY) {
         return page == currentPage || page == selectedPage
     }
-    return page == currentPage || page == selectedPage
+    if (!contentReady) {
+        return page == navigationStartPage || page == selectedPage
+    }
+    return true
 }
 
 internal fun shouldBypassNavigationDebounceForRoute(targetRoute: String): Boolean {

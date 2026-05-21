@@ -1051,7 +1051,10 @@ fun AppNavigation(
                 }
 
                 @Composable
-                fun RenderNavigationContent(key: BiliPaiNavKey) {
+                fun RenderNavigationContent(
+                    key: BiliPaiNavKey,
+                    isBottomPagerPageActive: Boolean = true
+                ) {
                     CompositionLocalProvider(
                         LocalVideoCardReturnTransitionState provides VideoCardReturnTransitionState(
                             sourceKey = navigation3ReturnSession.lastVideoSourceKey,
@@ -1081,14 +1084,18 @@ fun AppNavigation(
                                         currentPage = bottomPagerState.currentPage,
                                         selectedPage = mainBottomPagerState.selectedPage,
                                         isNavigating = mainBottomPagerState.isNavigating,
-                                        navigationStartPage = mainBottomPagerState.navigationStartPage
+                                        navigationStartPage = mainBottomPagerState.navigationStartPage,
+                                        contentReady = bottomPagerContentReady
                                     )
                                 ) {
                                     val pageKey = bottomPagerNavKeyForItem(item)
                                     CompositionLocalProvider(
                                         LocalVideoCardSharedElementSourceRoute provides pageKey.toLegacyRoute()
                                     ) {
-                                        RenderNavigationContent(pageKey)
+                                        RenderNavigationContent(
+                                            key = pageKey,
+                                            isBottomPagerPageActive = page == bottomPagerState.settledPage
+                                        )
                                     }
                                 } else {
                                     Box(modifier = Modifier.fillMaxSize())
@@ -1147,8 +1154,17 @@ fun AppNavigation(
                         BiliPaiNavEntryContentRole.HISTORY -> {
                                 val historyViewModel: HistoryViewModel = viewModel()
                                 val historyNavigationScope = rememberCoroutineScope()
-                                androidx.compose.runtime.LaunchedEffect(Unit) {
-                                    historyViewModel.loadData()
+                                var historyHasActivated by remember(historyViewModel) {
+                                    mutableStateOf(false)
+                                }
+                                androidx.compose.runtime.LaunchedEffect(
+                                    historyViewModel,
+                                    isBottomPagerPageActive
+                                ) {
+                                    if (isBottomPagerPageActive && !historyHasActivated) {
+                                        historyHasActivated = true
+                                        historyViewModel.loadData()
+                                    }
                                 }
                                 CommonListScreen(
                                     viewModel = historyViewModel,
@@ -1239,6 +1255,7 @@ fun AppNavigation(
                                 )
                             }
                         BiliPaiNavEntryContentRole.DYNAMIC -> DynamicScreen(
+                            isCurrentPage = isBottomPagerPageActive,
                             onVideoClick = { bvid -> navigateToVideoInNavigation3(bvid, 0L, "") },
                             onBangumiClick = { seasonId, epId ->
                                 if (seasonId > 0L || epId > 0L) {
@@ -1343,6 +1360,7 @@ fun AppNavigation(
                                 pushNavigation3Route(route)
                             }
                             ProfileScreen(
+                                isCurrentPage = isBottomPagerPageActive,
                                 onBack = { pushNavigation3Route(ScreenRoutes.Home.route) },
                                 onGoToLogin = { pushNavigation3Key(BiliPaiNavKey.Login) },
                                 onLogoutSuccess = { homeViewModel.refresh() },
