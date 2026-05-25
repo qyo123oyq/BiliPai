@@ -61,6 +61,30 @@ class VideoCommentSheetHostPolicyTest {
     }
 
     @Test
+    fun `main comment sheet scrim and blur follow presentation progress`() {
+        val hidden = resolveVideoCommentSheetHostOverlayVisual(
+            mainSheetVisible = true,
+            presentationProgress = 0f
+        )
+        val half = resolveVideoCommentSheetHostOverlayVisual(
+            mainSheetVisible = true,
+            presentationProgress = 0.5f
+        )
+        val shown = resolveVideoCommentSheetHostOverlayVisual(
+            mainSheetVisible = true,
+            presentationProgress = 1f
+        )
+
+        assertEquals(0f, hidden.scrimAlpha)
+        assertFalse(hidden.blurEnabled)
+        assertEquals(0.25f, half.scrimAlpha)
+        assertTrue(half.forceLowBlurBudget)
+        assertTrue(half.scrimAlpha < shown.scrimAlpha)
+        assertEquals(0.5f, shown.scrimAlpha)
+        assertFalse(shown.forceLowBlurBudget)
+    }
+
+    @Test
     fun `thread only detail should stay below the reserved top area`() {
         assertEquals(
             0.55f,

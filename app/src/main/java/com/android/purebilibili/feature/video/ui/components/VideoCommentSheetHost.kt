@@ -69,7 +69,10 @@ import com.android.purebilibili.core.ui.bottomSheetContentEnterTransition
 import com.android.purebilibili.core.ui.bottomSheetContentExitTransition
 import com.android.purebilibili.core.ui.bottomSheetScrimEnterTransition
 import com.android.purebilibili.core.ui.bottomSheetScrimExitTransition
+import com.android.purebilibili.core.ui.InteractiveOverlayProgressVisual
+import com.android.purebilibili.core.ui.InteractiveOverlaySurfaceType
 import com.android.purebilibili.core.ui.resolveAdaptiveBottomSheetMotionSpec
+import com.android.purebilibili.core.ui.resolveInteractiveOverlayProgressVisual
 import com.android.purebilibili.data.model.CommentFraudStatus
 import com.android.purebilibili.data.model.response.ReplyItem
 import com.android.purebilibili.data.repository.resolveCommentFraudLightMessage
@@ -182,6 +185,18 @@ internal fun resolveVideoCommentSheetPresentationProgress(
 ): Float {
     return hostVisibilityProgress.coerceIn(0f, 1f) *
         dragVisibilityProgress.coerceIn(0f, 1f)
+}
+
+internal fun resolveVideoCommentSheetHostOverlayVisual(
+    mainSheetVisible: Boolean,
+    presentationProgress: Float
+): InteractiveOverlayProgressVisual {
+    return resolveInteractiveOverlayProgressVisual(
+        presentationProgress = presentationProgress,
+        surfaceType = InteractiveOverlaySurfaceType.BOTTOM_SHEET,
+        blurActive = mainSheetVisible,
+        maxScrimAlpha = resolveVideoCommentSheetHostScrimAlpha(mainSheetVisible)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
@@ -299,6 +314,12 @@ fun VideoCommentSheetHost(
 
     LaunchedEffect(mainSheetVisible, hostContent, mainSheetVisibilityProgress) {
         onMainSheetVisibilityProgressChange(mainSheetVisibilityProgress)
+    }
+    val overlayVisual = remember(mainSheetVisible, mainSheetVisibilityProgress) {
+        resolveVideoCommentSheetHostOverlayVisual(
+            mainSheetVisible = mainSheetVisible,
+            presentationProgress = mainSheetVisibilityProgress
+        )
     }
 
     LaunchedEffect(hostVisible) {
@@ -428,7 +449,7 @@ fun VideoCommentSheetHost(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = scrimAlpha))
+                .background(Color.Black.copy(alpha = overlayVisual.scrimAlpha))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -506,7 +527,9 @@ fun VideoCommentSheetHost(
                             indication = null,
                             onClick = {}
                         ),
-                    color = appearance.panelColor
+                    color = appearance.panelColor.copy(
+                        alpha = appearance.panelColor.alpha * overlayVisual.surfaceAlphaMultiplier
+                    )
                 ) {
                     AnimatedContent(
                         targetState = hostContent,
