@@ -65,7 +65,7 @@ import com.android.purebilibili.core.ui.components.resolveUpStatsText
 import com.android.purebilibili.core.ui.transition.LocalVideoCardSharedElementSourceRoute
 import com.android.purebilibili.core.ui.transition.VIDEO_SHARED_COVER_ASPECT_RATIO
 import com.android.purebilibili.core.ui.transition.resolveHomeVideoSharedTransitionCornerSpec
-import com.android.purebilibili.core.ui.transition.resolveHomeVideoSharedTransitionMotionSpec
+import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionMotionSpec
 import com.android.purebilibili.core.ui.transition.resolveVideoSharedTransitionOwnership
 import com.android.purebilibili.core.ui.transition.shouldEnableVideoCoverSharedTransition
 import com.android.purebilibili.core.ui.transition.videoCardShellSharedElementKey
@@ -423,7 +423,7 @@ fun ElegantVideoCard(
             isQuickReturnLimited = isQuickReturnLimited
         )
         val homeSharedTransitionMotionSpec = remember(effectiveSharedElementSourceRoute, transitionEnabled) {
-            resolveHomeVideoSharedTransitionMotionSpec(
+            resolveVideoCardSharedTransitionMotionSpec(
                 sourceRoute = effectiveSharedElementSourceRoute,
                 transitionEnabled = transitionEnabled
             )

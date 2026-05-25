@@ -62,7 +62,7 @@ import com.android.purebilibili.core.ui.adaptive.MotionTier
 import com.android.purebilibili.core.ui.components.UpBadgeName
 import com.android.purebilibili.core.ui.transition.LocalVideoCardSharedElementSourceRoute
 import com.android.purebilibili.core.ui.transition.VIDEO_SHARED_COVER_ASPECT_RATIO
-import com.android.purebilibili.core.ui.transition.resolveHomeVideoSharedTransitionMotionSpec
+import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionMotionSpec
 import com.android.purebilibili.core.ui.transition.shouldEnableVideoCoverSharedTransition
 import com.android.purebilibili.core.ui.transition.shouldEnableVideoMetadataSharedTransition
 import com.android.purebilibili.core.ui.transition.videoCardShellSharedElementKey
@@ -142,7 +142,7 @@ fun CinematicVideoCard(
         sharedElementSourceRoute ?: localSharedElementSourceRoute
     }
     val cardSharedTransitionMotionSpec = remember(effectiveSharedElementSourceRoute, transitionEnabled) {
-        resolveHomeVideoSharedTransitionMotionSpec(
+        resolveVideoCardSharedTransitionMotionSpec(
             sourceRoute = effectiveSharedElementSourceRoute,
             transitionEnabled = transitionEnabled
         )

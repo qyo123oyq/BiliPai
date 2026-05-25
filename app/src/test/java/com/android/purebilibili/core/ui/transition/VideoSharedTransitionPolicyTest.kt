@@ -98,8 +98,8 @@ class VideoSharedTransitionPolicyTest {
     }
 
     @Test
-    fun homeSharedTransitionMotion_usesShortCoverPrimaryTimeline() {
-        val motion = resolveHomeVideoSharedTransitionMotionSpec(
+    fun videoCardSharedTransitionMotion_usesShortCoverPrimaryTimeline() {
+        val motion = resolveVideoCardSharedTransitionMotionSpec(
             sourceRoute = "home",
             transitionEnabled = true
         )
@@ -115,8 +115,8 @@ class VideoSharedTransitionPolicyTest {
     }
 
     @Test
-    fun homeSharedTransitionMotion_disabledForNonHomeSources() {
-        val motion = resolveHomeVideoSharedTransitionMotionSpec(
+    fun videoCardSharedTransitionMotion_keepsTimelineForNonHomeSources() {
+        val motion = resolveVideoCardSharedTransitionMotionSpec(
             sourceRoute = "search",
             transitionEnabled = true
         )

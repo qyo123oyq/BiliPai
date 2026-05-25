@@ -3,6 +3,7 @@ package com.android.purebilibili.feature.video.screen
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import com.android.purebilibili.core.store.FullscreenMode
+import com.android.purebilibili.core.ui.transition.shouldEnableVideoCoverSharedTransition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

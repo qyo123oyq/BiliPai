@@ -163,8 +163,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.android.purebilibili.core.ui.LocalSharedTransitionScope
 import com.android.purebilibili.core.ui.LocalAnimatedVisibilityScope
 import com.android.purebilibili.core.ui.transition.resolveHomeVideoSharedTransitionCornerSpec
-import com.android.purebilibili.core.ui.transition.resolveHomeVideoSharedTransitionMotionSpec
+import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionMotionSpec
 import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionEasing
+import com.android.purebilibili.core.ui.transition.shouldEnableVideoCoverSharedTransition
 import com.android.purebilibili.core.ui.rememberAppChevronUpIcon
 import com.android.purebilibili.core.ui.rememberAppCollectionIcon
 import com.android.purebilibili.core.ui.rememberAppDownloadIcon
@@ -957,7 +958,7 @@ fun VideoDetailScreen(
         resolveVideoDetailMotionSpec(transitionEnterDurationMillis)
     }
     val homeSharedTransitionMotionSpec = remember(sourceRouteForSharedElement, transitionEnabled) {
-        resolveHomeVideoSharedTransitionMotionSpec(
+        resolveVideoCardSharedTransitionMotionSpec(
             sourceRoute = sourceRouteForSharedElement,
             transitionEnabled = transitionEnabled
         )
@@ -5520,16 +5521,6 @@ internal fun resolveVideoDetailExitRequestedOrientation(
     originalRequestedOrientation: Int?
 ): Int {
     return originalRequestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-}
-
-internal fun shouldEnableVideoCoverSharedTransition(
-    transitionEnabled: Boolean,
-    hasSharedTransitionScope: Boolean,
-    hasAnimatedVisibilityScope: Boolean
-): Boolean {
-    return transitionEnabled &&
-        hasSharedTransitionScope &&
-        hasAnimatedVisibilityScope
 }
 
 internal fun shouldEnablePortraitExperience(): Boolean {

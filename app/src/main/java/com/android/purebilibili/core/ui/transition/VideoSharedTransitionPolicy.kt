@@ -105,7 +105,7 @@ internal fun resolveVideoSharedTransitionOwnership(
     )
 }
 
-internal fun resolveHomeVideoSharedTransitionMotionSpec(
+internal fun resolveVideoCardSharedTransitionMotionSpec(
     sourceRoute: String?,
     transitionEnabled: Boolean
 ): VideoSharedTransitionMotionSpec {

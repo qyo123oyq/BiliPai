@@ -31,11 +31,23 @@ class VideoDetailScreenMethodSizeStructureTest {
             .substringAfter("val playerContainerModifier = if (")
             .substringBefore("//  播放器容器包含状态栏高度")
 
-        assertTrue(source.contains("resolveHomeVideoSharedTransitionMotionSpec("))
+        assertTrue(source.contains("resolveVideoCardSharedTransitionMotionSpec("))
         assertTrue(source.contains("resolveHomeVideoSharedTransitionCornerSpec("))
         assertTrue(playerContainerSource.contains("homeSharedTransitionMotionSpec.enabled"))
         assertTrue(playerContainerSource.contains("durationMillis = homeSharedTransitionMotionSpec.durationMillis"))
         assertTrue(playerContainerSource.contains("homeSharedTransitionCornerSpec.endCornerDp.dp"))
+    }
+
+    @Test
+    fun videoDetailScreenUsesCentralSharedTransitionEnablePolicy() {
+        val source = loadSource("app/src/main/java/com/android/purebilibili/feature/video/screen/VideoDetailScreen.kt")
+
+        assertTrue(
+            source.contains("import com.android.purebilibili.core.ui.transition.shouldEnableVideoCoverSharedTransition")
+        )
+        assertFalse(
+            source.contains("internal fun shouldEnableVideoCoverSharedTransition(")
+        )
     }
 
     @Test
