@@ -1392,12 +1392,23 @@ fun VideoDetailScreen(
     }
     
     //  从小窗展开时自动进入全屏
-    LaunchedEffect(startInFullscreen) {
+    LaunchedEffect(startInFullscreen, isOrientationDrivenFullscreen, isLandscape) {
         if (startInFullscreen) {
             if (!isOrientationDrivenFullscreen) {
                 userRequestedFullscreen = true
-            } else if (!isLandscape) {
+            } else {
                 context.findActivity()?.let { activity ->
+                    val isInMultiWindowMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                        activity.isInMultiWindowMode
+                    if (!shouldApplyStartFullscreenOrientationRequest(
+                            startInFullscreen = startInFullscreen,
+                            isOrientationDrivenFullscreen = isOrientationDrivenFullscreen,
+                            isLandscape = isLandscape,
+                            isInMultiWindowMode = isInMultiWindowMode
+                        )
+                    ) {
+                        return@let
+                    }
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                 }
             }
@@ -1410,6 +1421,9 @@ fun VideoDetailScreen(
     //  [关键] 保存进入前的状态栏配置（在 DisposableEffect 外部定义以便复用）
     val activity = remember { context.findActivity() }
     val window = remember { activity?.window }
+    val isActivityInMultiWindowMode = activity?.let { host ->
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && host.isInMultiWindowMode
+    } ?: false
     var entryRequestedOrientation by rememberSaveable {
         mutableIntStateOf(
             activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -2106,6 +2120,7 @@ fun VideoDetailScreen(
         isOrientationDrivenFullscreen,
         isFullscreenMode,
         windowSizeClass.isCompactDevice,
+        isActivityInMultiWindowMode,
         userRequestedFullscreen,
         manualPortraitHoldActive,
         isVerticalVideo
@@ -2120,7 +2135,8 @@ fun VideoDetailScreen(
             manualFullscreenRequested = userRequestedFullscreen,
             manualPortraitHoldActive = manualPortraitHoldActive,
             isVerticalVideo = isVerticalVideo,
-            currentRequestedOrientation = activity?.requestedOrientation
+            currentRequestedOrientation = activity?.requestedOrientation,
+            isInMultiWindowMode = isActivityInMultiWindowMode
         ) ?: return@LaunchedEffect
 
         if (activity?.requestedOrientation != requestedOrientation) {
@@ -2128,7 +2144,7 @@ fun VideoDetailScreen(
         }
         com.android.purebilibili.core.util.Logger.d(
             "VideoDetailScreen",
-            "🔄 Auto-rotate: enabled=$autoRotateEnabled, system=$systemAutoRotateEnabled, hold=$manualPortraitHoldActive, mode=$fullscreenMode, horizontal=$horizontalAdaptationEnabled, requested=$requestedOrientation, fullscreen=$isFullscreenMode, verticalVideo=$isVerticalVideo, isCompactDevice=${windowSizeClass.isCompactDevice}"
+            "🔄 Auto-rotate: enabled=$autoRotateEnabled, system=$systemAutoRotateEnabled, hold=$manualPortraitHoldActive, mode=$fullscreenMode, horizontal=$horizontalAdaptationEnabled, requested=$requestedOrientation, fullscreen=$isFullscreenMode, verticalVideo=$isVerticalVideo, isCompactDevice=${windowSizeClass.isCompactDevice}, multiWindow=$isActivityInMultiWindowMode"
         )
     }
     var lastPhoneAutoRotateLandscapeAppliedAtMs by remember { mutableStateOf<Long?>(null) }
@@ -2139,7 +2155,8 @@ fun VideoDetailScreen(
         windowSizeClass.isCompactDevice,
         isOrientationDrivenFullscreen,
         fullscreenMode,
-        manualPortraitHoldActive
+        manualPortraitHoldActive,
+        isActivityInMultiWindowMode
     ) {
         if (!shouldObservePhoneAutoRotate(
                 autoRotateEnabled = autoRotateEnabled,
@@ -2147,7 +2164,8 @@ fun VideoDetailScreen(
                 isCompactDevice = windowSizeClass.isCompactDevice,
                 isOrientationDrivenFullscreen = isOrientationDrivenFullscreen,
                 fullscreenMode = fullscreenMode,
-                manualPortraitHoldActive = manualPortraitHoldActive
+                manualPortraitHoldActive = manualPortraitHoldActive,
+                isInMultiWindowMode = isActivityInMultiWindowMode
             )
         ) {
             lastPhoneAutoRotateLandscapeAppliedAtMs = null
@@ -2161,7 +2179,8 @@ fun VideoDetailScreen(
         fullscreenMode,
         useTabletLayout,
         isOrientationDrivenFullscreen,
-        manualPortraitHoldActive
+        manualPortraitHoldActive,
+        isActivityInMultiWindowMode
     ) {
         val hostActivity = activity
         if (
@@ -2172,7 +2191,8 @@ fun VideoDetailScreen(
                 isCompactDevice = windowSizeClass.isCompactDevice,
                 isOrientationDrivenFullscreen = isOrientationDrivenFullscreen,
                 fullscreenMode = fullscreenMode,
-                manualPortraitHoldActive = manualPortraitHoldActive
+                manualPortraitHoldActive = manualPortraitHoldActive,
+                isInMultiWindowMode = isActivityInMultiWindowMode
             ) ||
             !isOrientationDrivenFullscreen
         ) {
@@ -5065,6 +5085,20 @@ internal fun shouldApplyPhoneAutoRotatePolicy(
     return isCompactDevice
 }
 
+internal fun shouldApplyStartFullscreenOrientationRequest(
+    startInFullscreen: Boolean,
+    isOrientationDrivenFullscreen: Boolean,
+    isLandscape: Boolean,
+    isInMultiWindowMode: Boolean
+): Boolean {
+    if (!startInFullscreen) return false
+    if (!isOrientationDrivenFullscreen) return false
+    if (isLandscape) return false
+    // 系统小窗/分屏内强写 requestedOrientation 会让部分 ROM 在横竖窗口间反复重建。
+    if (isInMultiWindowMode) return false
+    return true
+}
+
 internal fun resolvePhoneFullscreenEnterOrientation(
     fullscreenMode: com.android.purebilibili.core.store.FullscreenMode,
     isVerticalVideo: Boolean
@@ -5129,8 +5163,12 @@ internal fun resolvePhoneVideoRequestedOrientation(
     manualFullscreenRequested: Boolean = false,
     manualPortraitHoldActive: Boolean = false,
     isVerticalVideo: Boolean = false,
-    currentRequestedOrientation: Int? = null
+    currentRequestedOrientation: Int? = null,
+    isInMultiWindowMode: Boolean = false
 ): Int? {
+    if (isInMultiWindowMode) {
+        return null
+    }
     if (!shouldApplyPhoneAutoRotatePolicy(isCompactDevice)) {
         return ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
@@ -5315,10 +5353,12 @@ internal fun shouldObservePhoneAutoRotate(
     isCompactDevice: Boolean,
     isOrientationDrivenFullscreen: Boolean,
     fullscreenMode: com.android.purebilibili.core.store.FullscreenMode,
-    manualPortraitHoldActive: Boolean
+    manualPortraitHoldActive: Boolean,
+    isInMultiWindowMode: Boolean = false
 ): Boolean {
     if (!autoRotateEnabled) return false
     if (!systemAutoRotateEnabled) return false
+    if (isInMultiWindowMode) return false
     if (!shouldApplyPhoneAutoRotatePolicy(isCompactDevice)) return false
     if (!isOrientationDrivenFullscreen) return false
     if (fullscreenMode == com.android.purebilibili.core.store.FullscreenMode.NONE) return false

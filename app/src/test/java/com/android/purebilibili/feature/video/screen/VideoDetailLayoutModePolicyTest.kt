@@ -182,6 +182,35 @@ class VideoDetailLayoutModePolicyTest {
     }
 
     @Test
+    fun systemMultiWindowFullscreenPolicy_doesNotApplyRouteOrientationRequestInsideSmallWindow() {
+        assertFalse(
+            shouldApplyStartFullscreenOrientationRequest(
+                startInFullscreen = true,
+                isOrientationDrivenFullscreen = true,
+                isLandscape = false,
+                isInMultiWindowMode = true
+            )
+        )
+    }
+
+    @Test
+    fun phoneOrientationPolicy_doesNotWriteRequestedOrientationInsideSmallWindow() {
+        assertEquals(
+            null,
+            resolvePhoneVideoRequestedOrientation(
+                autoRotateEnabled = true,
+                systemAutoRotateEnabled = true,
+                fullscreenMode = FullscreenMode.AUTO,
+                isCompactDevice = true,
+                isOrientationDrivenFullscreen = true,
+                isFullscreenMode = true,
+                manualFullscreenRequested = true,
+                isInMultiWindowMode = true
+            )
+        )
+    }
+
+    @Test
     fun sharedCoverTransition_requiresSwitchAndBothScopes() {
         assertTrue(
             shouldEnableVideoCoverSharedTransition(
@@ -560,6 +589,21 @@ class VideoDetailLayoutModePolicyTest {
                 isOrientationDrivenFullscreen = true,
                 fullscreenMode = FullscreenMode.AUTO,
                 manualPortraitHoldActive = true
+            )
+        )
+    }
+
+    @Test
+    fun phoneOrientationObserverPolicy_doesNotListenInsideSmallWindow() {
+        assertFalse(
+            shouldObservePhoneAutoRotate(
+                autoRotateEnabled = true,
+                systemAutoRotateEnabled = true,
+                isCompactDevice = true,
+                isOrientationDrivenFullscreen = true,
+                fullscreenMode = FullscreenMode.AUTO,
+                manualPortraitHoldActive = false,
+                isInMultiWindowMode = true
             )
         )
     }
