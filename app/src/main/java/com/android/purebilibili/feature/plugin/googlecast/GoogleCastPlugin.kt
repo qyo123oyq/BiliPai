@@ -62,7 +62,9 @@ class GoogleCastPlugin : CastPluginApi {
             url = media.url,
             title = media.title,
             creator = media.creator,
-            contentType = media.contentType
+            contentType = media.contentType,
+            startPositionMs = media.startPositionMs,
+            autoplay = media.autoplay
         )
         if (result.isSuccess) {
             val session = CastContext.getSharedInstance(context).sessionManager.currentCastSession

@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class CastPluginApiTest {
 
@@ -45,5 +46,17 @@ class CastPluginApiTest {
         assertEquals(0L, state.currentPositionMs)
         assertEquals(0L, state.durationMs)
         assertEquals(0L, state.bufferedPositionMs)
+    }
+
+    @Test
+    fun `CastPluginMediaRequest default startPositionMs is 0`() {
+        val request = CastPluginMediaRequest(url = "https://example.com/video.mp4", title = "Test")
+        assertEquals(0L, request.startPositionMs)
+    }
+
+    @Test
+    fun `CastPluginMediaRequest default autoplay is true`() {
+        val request = CastPluginMediaRequest(url = "https://example.com/video.mp4", title = "Test")
+        assertTrue(request.autoplay)
     }
 }

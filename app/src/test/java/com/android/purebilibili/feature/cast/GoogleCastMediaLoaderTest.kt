@@ -56,6 +56,28 @@ class GoogleCastMediaLoaderTest {
     }
 
     @Test
+    fun `buildMediaLoadRequest accepts startPositionMs and sets it on currentTime`() {
+        val request = GoogleCastMediaLoader.buildMediaLoadRequest(
+            url = "https://example.com/video.mp4",
+            title = "Test Video",
+            startPositionMs = 15000L
+        )
+
+        assertEquals(15000L, request.currentTime)
+    }
+
+    @Test
+    fun `buildMediaLoadRequest accepts autoplay false`() {
+        val request = GoogleCastMediaLoader.buildMediaLoadRequest(
+            url = "https://example.com/video.mp4",
+            title = "Test Video",
+            autoplay = false
+        )
+
+        assertEquals(false, request.autoplay)
+    }
+
+    @Test
     fun `buildMediaLoadRequest accepts custom content type`() {
         val request = GoogleCastMediaLoader.buildMediaLoadRequest(
             url = "https://example.com/stream.m3u8",

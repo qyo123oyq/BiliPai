@@ -167,6 +167,30 @@ Result on 2026-05-26:
 - `.\gradlew.bat :app:assembleDebug --no-daemon` → BUILD SUCCESSFUL
 - Debug APK for device testing: `app/build/outputs/apk/debug/BiliPai-debug-8.4.1-debug.apk`.
 
+### Slice 7: Active Cast Quality/Source Reload
+
+Goal: when the user changes video quality or the playable source changes during an active Google Cast session, reload the same cast route with the new media URL while preserving remote position and play/pause intent.
+
+Status: verified.
+
+Result on 2026-05-26:
+
+- Extended `CastPluginMediaRequest` with source-compatible `startPositionMs` and `autoplay` fields.
+- `GoogleCastMediaLoader` now maps those fields to CAF `MediaLoadRequestData.currentTime` and `autoplay`.
+- `VideoPlayerOverlay` tracks the active plugin route, last cast source signature, and last cast URL for active cast sessions.
+- Active Google Cast sessions automatically reload when `aid`, `cid`, `currentQuality`, or `currentVideoUrl` changes; same-URL updates only refresh the signature to avoid no-op reload loops.
+- DLNA remains one-shot/manual because its plugin playback state is inactive and does not provide remote position or play/pause state.
+
+Verification:
+
+```powershell
+.\gradlew.bat "-Pkotlin.compiler.execution.strategy=in-process" :app:testDebugUnitTest --tests "*Cast*" --no-daemon
+.\gradlew.bat "-Pkotlin.compiler.execution.strategy=in-process" :app:compileDebugKotlin --no-daemon
+.\gradlew.bat "-Pkotlin.compiler.execution.strategy=in-process" :app:assembleDebug --no-daemon
+```
+
+Both commands completed with `BUILD SUCCESSFUL`.
+
 ## Progress Log
 
 - 2026-05-26: Created isolated worktree `feature/google-cast-plugin`.
@@ -178,3 +202,4 @@ Result on 2026-05-26:
 - 2026-05-26: Completed Slice 5 bugfix — SSDP per-device exception isolation, Google Cast route cache preservation, dialog dismissal timing fix, and debug APK build.
 - 2026-05-26: Completed Slice 6 bugfix — DLNA DOCTYPE parsing, first-tap RemoteMediaClient wait, and cast playback control.
 - 2026-05-26: Updated Google Cast plugin author metadata from 'BiliPai项目组' to 'Leko (lekoOwO)' before opening upstream PR.
+- 2026-05-26: Completed Slice 7 active Google Cast quality/source reload while keeping DLNA one-shot/manual.

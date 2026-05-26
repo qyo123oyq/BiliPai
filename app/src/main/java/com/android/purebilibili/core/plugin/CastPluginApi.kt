@@ -17,7 +17,9 @@ data class CastPluginMediaRequest(
     val url: String,
     val title: String,
     val creator: String = "",
-    val contentType: String = "video/mp4"
+    val contentType: String = "video/mp4",
+    val startPositionMs: Long = 0L,
+    val autoplay: Boolean = true
 )
 
 data class CastPluginPlaybackState(

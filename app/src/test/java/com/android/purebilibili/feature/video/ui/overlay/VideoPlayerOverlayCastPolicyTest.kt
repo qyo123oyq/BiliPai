@@ -4,6 +4,7 @@ import com.android.purebilibili.core.plugin.CastPluginPlaybackState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class VideoPlayerOverlayCastPolicyTest {
@@ -92,5 +93,146 @@ class VideoPlayerOverlayCastPolicyTest {
     fun doesNotActivatePluginPlaybackWhenCastPlaybackIsInactive() {
         val state = CastPluginPlaybackState(isActive = false)
         assertFalse(shouldActivatePluginPlaybackAfterCast(state))
+    }
+
+    // --- CastMediaSourceSignature ---
+
+    @Test
+    fun `CastMediaSourceSignature changes when quality changes`() {
+        val sig1 = buildCastMediaSourceSignature(
+            currentAid = 1L,
+            cid = 2L,
+            currentQuality = 80,
+            currentVideoUrl = "https://example.com/video.mp4"
+        )
+        val sig2 = buildCastMediaSourceSignature(
+            currentAid = 1L,
+            cid = 2L,
+            currentQuality = 64,
+            currentVideoUrl = "https://example.com/video.mp4"
+        )
+        assertNotEquals(sig1, sig2)
+    }
+
+    // --- shouldReloadActiveCastAfterMediaSourceChange ---
+
+    @Test
+    fun `shouldReloadActiveCast returns true when plugin route state and signature differ`() {
+        val currentSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 80, currentVideoUrl = "url"
+        )
+        val lastSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 64, currentVideoUrl = "url"
+        )
+        val activeState = CastPluginPlaybackState(isActive = true)
+
+        assertTrue(
+            shouldReloadActiveCastAfterMediaSourceChange(
+                activePluginExists = true,
+                activeRouteExists = true,
+                pluginState = activeState,
+                currentSignature = currentSig,
+                lastCastSignature = lastSig
+            )
+        )
+    }
+
+    @Test
+    fun `shouldReloadActiveCast returns false for inactive playback state`() {
+        val currentSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 80, currentVideoUrl = "url"
+        )
+        val lastSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 64, currentVideoUrl = "url"
+        )
+        val inactiveState = CastPluginPlaybackState(isActive = false)
+
+        assertFalse(
+            shouldReloadActiveCastAfterMediaSourceChange(
+                activePluginExists = true,
+                activeRouteExists = true,
+                pluginState = inactiveState,
+                currentSignature = currentSig,
+                lastCastSignature = lastSig
+            )
+        )
+    }
+
+    @Test
+    fun `shouldReloadActiveCast returns false when no plugin exists`() {
+        val currentSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 80, currentVideoUrl = "url"
+        )
+        val lastSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 64, currentVideoUrl = "url"
+        )
+        val activeState = CastPluginPlaybackState(isActive = true)
+
+        assertFalse(
+            shouldReloadActiveCastAfterMediaSourceChange(
+                activePluginExists = false,
+                activeRouteExists = true,
+                pluginState = activeState,
+                currentSignature = currentSig,
+                lastCastSignature = lastSig
+            )
+        )
+    }
+
+    @Test
+    fun `shouldReloadActiveCast returns false when no route exists`() {
+        val currentSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 80, currentVideoUrl = "url"
+        )
+        val lastSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 64, currentVideoUrl = "url"
+        )
+        val activeState = CastPluginPlaybackState(isActive = true)
+
+        assertFalse(
+            shouldReloadActiveCastAfterMediaSourceChange(
+                activePluginExists = true,
+                activeRouteExists = false,
+                pluginState = activeState,
+                currentSignature = currentSig,
+                lastCastSignature = lastSig
+            )
+        )
+    }
+
+    @Test
+    fun `shouldReloadActiveCast returns false for first cast with no previous signature`() {
+        val currentSig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 80, currentVideoUrl = "url"
+        )
+        val activeState = CastPluginPlaybackState(isActive = true)
+
+        assertFalse(
+            shouldReloadActiveCastAfterMediaSourceChange(
+                activePluginExists = true,
+                activeRouteExists = true,
+                pluginState = activeState,
+                currentSignature = currentSig,
+                lastCastSignature = null
+            )
+        )
+    }
+
+    @Test
+    fun `shouldReloadActiveCast returns false when signature unchanged`() {
+        val sig = buildCastMediaSourceSignature(
+            currentAid = 1L, cid = 2L, currentQuality = 80, currentVideoUrl = "url"
+        )
+        val activeState = CastPluginPlaybackState(isActive = true)
+
+        assertFalse(
+            shouldReloadActiveCastAfterMediaSourceChange(
+                activePluginExists = true,
+                activeRouteExists = true,
+                pluginState = activeState,
+                currentSignature = sig,
+                lastCastSignature = sig
+            )
+        )
     }
 }

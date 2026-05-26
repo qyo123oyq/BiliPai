@@ -40,7 +40,9 @@ internal object GoogleCastMediaLoader {
         url: String,
         title: String,
         creator: String = "",
-        contentType: String = DEFAULT_CONTENT_TYPE
+        contentType: String = DEFAULT_CONTENT_TYPE,
+        startPositionMs: Long = 0L,
+        autoplay: Boolean = true
     ): MediaLoadRequestData {
         val policy = resolveGoogleCastMediaMetadata(title, creator)
         val metadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE).apply {
@@ -58,7 +60,8 @@ internal object GoogleCastMediaLoader {
 
         return MediaLoadRequestData.Builder()
             .setMediaInfo(mediaInfo)
-            .setAutoplay(true)
+            .setAutoplay(autoplay)
+            .setCurrentTime(startPositionMs.coerceAtLeast(0L))
             .build()
     }
 
@@ -68,7 +71,9 @@ internal object GoogleCastMediaLoader {
         url: String,
         title: String,
         creator: String = "",
-        contentType: String = DEFAULT_CONTENT_TYPE
+        contentType: String = DEFAULT_CONTENT_TYPE,
+        startPositionMs: Long = 0L,
+        autoplay: Boolean = true
     ): Result<Unit> = withContext(Dispatchers.Main) {
         try {
             val router = MediaRouter.getInstance(context)
@@ -101,7 +106,7 @@ internal object GoogleCastMediaLoader {
             }
 
             val remoteMediaClient = session.remoteMediaClient!!
-            val request = buildMediaLoadRequest(url, title, creator, contentType)
+            val request = buildMediaLoadRequest(url, title, creator, contentType, startPositionMs, autoplay)
             remoteMediaClient.load(request)
 
             Result.success(Unit)
