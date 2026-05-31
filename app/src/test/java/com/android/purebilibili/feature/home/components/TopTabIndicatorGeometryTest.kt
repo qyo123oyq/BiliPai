@@ -140,14 +140,14 @@ class TopTabIndicatorGeometryTest {
     }
 
     @Test
-    fun `top tab dock indicator keeps bottom bar style inner gap`() {
+    fun `top tab dock indicator uses flatter geometry with outer chrome`() {
         assertEquals(
-            6f,
+            3f,
             resolveTopTabDockIndicatorHorizontalGapDp(hasOuterChromeSurface = true),
             0.01f
         )
         assertEquals(
-            6f,
+            10f,
             resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface = true),
             0.01f
         )
@@ -169,27 +169,37 @@ class TopTabIndicatorGeometryTest {
 
     @Test
     fun `top tab dock indicator leaves gap inside each slot`() {
+        val horizontalGap = resolveTopTabDockIndicatorHorizontalGapDp(
+            hasOuterChromeSurface = true
+        )
+        val verticalGap = resolveTopTabDockIndicatorVerticalGapDp(
+            hasOuterChromeSurface = true
+        )
         val width = resolveTopTabDockIndicatorWidthDp(
             itemWidthDp = 96f,
-            horizontalGapDp = 6f
+            horizontalGapDp = horizontalGap
         )
         val height = resolveTopTabDockIndicatorHeightDp(
             rowHeightDp = 56f,
-            verticalGapDp = 6f,
+            verticalGapDp = verticalGap,
             minHeightDp = 2f
         )
 
-        assertEquals(84f, width, 0.01f)
-        assertEquals(44f, height, 0.01f)
+        assertEquals(90f, width, 0.01f)
+        assertEquals(36f, height, 0.01f)
     }
 
     @Test
     fun `top tab dock indicator translation starts after inner gap`() {
+        val horizontalGap = resolveTopTabDockIndicatorHorizontalGapDp(
+            hasOuterChromeSurface = true
+        )
+
         assertEquals(
-            38f,
+            35f,
             resolveTopTabDockIndicatorOffsetPx(
                 slotTranslationPx = 32f,
-                horizontalGapPx = 6f
+                horizontalGapPx = horizontalGap
             ),
             0.01f
         )

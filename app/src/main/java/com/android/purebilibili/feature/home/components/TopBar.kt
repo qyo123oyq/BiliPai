@@ -122,10 +122,10 @@ internal fun resolveTopTabRowHorizontalPaddingDp(
 }
 
 internal fun resolveTopTabDockIndicatorHorizontalGapDp(hasOuterChromeSurface: Boolean): Float =
-    if (hasOuterChromeSurface) 6f else 3f
+    if (hasOuterChromeSurface) 3f else 3f
 
 internal fun resolveTopTabDockIndicatorVerticalGapDp(hasOuterChromeSurface: Boolean): Float =
-    if (hasOuterChromeSurface) 6f else 4f
+    if (hasOuterChromeSurface) 10f else 4f
 
 internal fun resolveTopTabDockIndicatorWidthDp(
     itemWidthDp: Float,
@@ -1150,6 +1150,7 @@ private fun LightweightHomeTopTabs(
                         indicatorPanelOffsetPx = topTabPanelOffsetPx,
                         indicatorSettleReboundTransform = BottomBarClickPulseTransform(scaleX = 1f),
                         indicatorWidth = md3LiquidCapsuleWidth,
+                        indicatorHeight = dockIndicatorHeight,
                         shellShape = resolveSharedBottomBarCapsuleShape(),
                         liquidGlassPreset = BottomBarLiquidGlassPreset.BILIPAI_TUNED,
                         contentBackdrop = topTabIndicatorContentBackdrop,

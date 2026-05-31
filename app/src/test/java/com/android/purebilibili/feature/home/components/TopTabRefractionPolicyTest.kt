@@ -337,6 +337,7 @@ class TopTabRefractionPolicyTest {
         assertTrue(source.contains("val shouldUseMd3DockBackedCapsule = effectiveRenderer == HomeTopTabRenderer.MD3"))
         assertTrue(source.contains("indicatorLayerScaleProgress = topTabIndicatorLayerScaleProgress"))
         assertTrue(source.contains("refractionMotionProfile = topTabRefractionMotionProfile"))
+        assertTrue(source.contains("indicatorHeight = dockIndicatorHeight"))
     }
 
     private fun loadSource(path: String): String {
