@@ -217,6 +217,7 @@ fun HomeScreen(
     var delayTopTabsUntilCardSettled by remember { mutableStateOf(false) }
     var hideTopTabsForForwardDetailNav by remember { mutableStateOf(false) }
     var returnAnimationStartElapsedMs by remember { mutableLongStateOf(0L) }
+    var topTabsRevealJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     fun setHeaderOffsetImmediate(value: Float) {
         headerSettleAnimationJob?.cancel()
@@ -686,6 +687,28 @@ fun HomeScreen(
         cardTransitionEnabled = cardTransitionEnabled,
         isQuickReturnFromDetail = isQuickReturningFromVideoDetail
     )
+    // Navigation 返回不一定触发首页 Lifecycle.ON_START，顶栏恢复必须直接跟随返回态。
+    LaunchedEffect(isReturningFromVideoDetail, cardTransitionEnabled, isQuickReturningFromVideoDetail) {
+        if (!isReturningFromVideoDetail) return@LaunchedEffect
+        topTabsRevealJob?.cancel()
+        returnAnimationStartElapsedMs = SystemClock.elapsedRealtime()
+        hideTopTabsForForwardDetailNav = false
+        val revealDelayMs = resolveHomeTopTabsRevealDelayMs(
+            isReturningFromDetail = true,
+            cardTransitionEnabled = cardTransitionEnabled,
+            isQuickReturnFromDetail = isQuickReturningFromVideoDetail
+        )
+        if (revealDelayMs > 0L) {
+            delayTopTabsUntilCardSettled = true
+            topTabsRevealJob = coroutineScope.launch {
+                delay(revealDelayMs)
+                delayTopTabsUntilCardSettled = false
+            }
+        } else {
+            delayTopTabsUntilCardSettled = false
+        }
+    }
+
     // 从详情页返回时延后清理“返回中”状态，避免卡片进场动画在共享转场期间抢跑造成闪屏。
     LaunchedEffect(returnAnimationSuppressionDurationMs, isReturningFromVideoDetail) {
         if (isReturningFromVideoDetail) {
@@ -1141,8 +1164,6 @@ fun HomeScreen(
             }
         }
     }
-    var topTabsRevealJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
-
     //  包装 onVideoClick：点击视频时先隐藏底栏再导航
     val wrappedOnVideoClick: (HomeVideoClickRequest) -> Unit = remember(
         onVideoClick,
@@ -1881,10 +1902,11 @@ fun HomeScreen(
 
     
     //  使用生命周期事件：
-    // ON_START: 记录返回时间戳、恢复顶部标签页 + 非视频返回底栏立即恢复
+    // ON_START: 非视频返回底栏立即恢复
     // ON_STOP: 清理定时器
-    // 视频返回的底栏恢复统一由动画完成 LaunchedEffect 处理，避免独立计时与动画不同步
+    // 视频返回的顶栏/底栏恢复统一由导航返回态 LaunchedEffect 处理，避免依赖不稳定的页面生命周期。
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    val currentBottomBarVisible by rememberUpdatedState(bottomBarVisible)
     DisposableEffect(lifecycleOwner, useSideNavigation) {
         if (useSideNavigation) {
             return@DisposableEffect onDispose { }
@@ -1892,30 +1914,8 @@ fun HomeScreen(
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             when (event) {
                 androidx.lifecycle.Lifecycle.Event.ON_START -> {
-                    topTabsRevealJob?.cancel()
-                    val returningFromDetail = isReturningFromVideoDetail
-                    if (hideTopTabsForForwardDetailNav || returningFromDetail) {
-                        if (returningFromDetail) {
-                            returnAnimationStartElapsedMs = SystemClock.elapsedRealtime()
-                        }
-                        hideTopTabsForForwardDetailNav = false
-                        val revealDelayMs = resolveHomeTopTabsRevealDelayMs(
-                            isReturningFromDetail = returningFromDetail,
-                            cardTransitionEnabled = cardTransitionEnabled,
-                            isQuickReturnFromDetail = isQuickReturningFromVideoDetail
-                        )
-                        if (revealDelayMs > 0L) {
-                            delayTopTabsUntilCardSettled = true
-                            topTabsRevealJob = coroutineScope.launch {
-                                delay(revealDelayMs)
-                                delayTopTabsUntilCardSettled = false
-                            }
-                        } else {
-                            delayTopTabsUntilCardSettled = false
-                        }
-                    }
                     //  底栏由动画完成 LaunchedEffect 统一恢复，此处不再独立计时
-                    if (!bottomBarVisible && !isVideoNavigating) {
+                    if (!currentBottomBarVisible && !isVideoNavigating) {
                         //  从设置等非视频页面返回时，立即显示底栏（无延迟）
                         setBottomBarVisible(true)
                     }

@@ -24,6 +24,23 @@ class HomeHeroFlyoutStructureTest {
     }
 
     @Test
+    fun homeTopTabsReturnRecoveryFollowsNavigationStateInsteadOfLifecycleStart() {
+        val source = loadSource("app/src/main/java/com/android/purebilibili/feature/home/HomeScreen.kt")
+        val navigationReturnEffect = source
+            .substringAfter("Navigation 返回不一定触发首页 Lifecycle.ON_START")
+            .substringBefore("从详情页返回时延后清理")
+        val lifecycleObserverSource = source
+            .substringAfter("DisposableEffect(lifecycleOwner, useSideNavigation)")
+            .substringBefore("lifecycleOwner.lifecycle.addObserver(observer)")
+
+        assertTrue(navigationReturnEffect.contains("LaunchedEffect(isReturningFromVideoDetail"))
+        assertTrue(navigationReturnEffect.contains("hideTopTabsForForwardDetailNav = false"))
+        assertTrue(navigationReturnEffect.contains("resolveHomeTopTabsRevealDelayMs("))
+        assertFalse(lifecycleObserverSource.contains("val returningFromDetail = isReturningFromVideoDetail"))
+        assertFalse(lifecycleObserverSource.contains("resolveHomeTopTabsRevealDelayMs("))
+    }
+
+    @Test
     fun ordinaryHomeVideoCardDoesNotRunSourceFlyout() {
         val pageSource = loadSource("app/src/main/java/com/android/purebilibili/feature/home/HomeCategoryPage.kt")
         val cardSource = loadSource("app/src/main/java/com/android/purebilibili/feature/home/components/cards/VideoCard.kt")
