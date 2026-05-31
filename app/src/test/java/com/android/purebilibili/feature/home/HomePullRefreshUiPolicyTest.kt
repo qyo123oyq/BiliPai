@@ -228,9 +228,9 @@ class HomePullRefreshUiPolicyTest {
     }
 
     @Test
-    fun `resolvePullContentOffsetFraction keeps md3 content pinned during pull`() {
+    fun `resolvePullContentOffsetFraction lets md3 content follow finger during pull`() {
         assertEquals(
-            0f,
+            0.6f,
             resolvePullContentOffsetFraction(
                 distanceFraction = 1.2f,
                 isRefreshing = false,
@@ -241,7 +241,7 @@ class HomePullRefreshUiPolicyTest {
     }
 
     @Test
-    fun `md3 screenshot pull indicator pushes cards down with pull strength`() {
+    fun `md3 screenshot pull indicator uses ios content motion curve`() {
         val lightPull = resolvePullContentOffsetFraction(
             distanceFraction = 0.4f,
             isRefreshing = false,
@@ -257,7 +257,41 @@ class HomePullRefreshUiPolicyTest {
 
         assertTrue(lightPull > 0f)
         assertTrue(heavyPull > lightPull)
-        assertTrue(heavyPull <= 1.08f)
+        assertEquals(0.2f, lightPull, 0.001f)
+        assertEquals(0.6f, heavyPull, 0.001f)
+    }
+
+    @Test
+    fun `miuix material indicator uses ios content motion curve`() {
+        assertEquals(
+            0.3f,
+            resolvePullContentOffsetFraction(
+                distanceFraction = 0.6f,
+                isRefreshing = false,
+                motionStyle = HomePullRefreshMotionStyle.MD3,
+                indicatorStyle = HomePullRefreshIndicatorStyle.MATERIAL_DEFAULT
+            ),
+            0.001f
+        )
+        assertEquals(
+            0.6f,
+            resolvePullContentOffsetFraction(
+                distanceFraction = 1.2f,
+                isRefreshing = false,
+                motionStyle = HomePullRefreshMotionStyle.MD3,
+                indicatorStyle = HomePullRefreshIndicatorStyle.MATERIAL_DEFAULT
+            ),
+            0.001f
+        )
+    }
+
+    @Test
+    fun `md3 screenshot pull content max offset matches ios distance`() {
+        assertEquals(
+            140f,
+            resolvePullContentMaxOffsetDp(HomePullRefreshIndicatorStyle.MD3_SCREENSHOT_HANDLE),
+            0.001f
+        )
     }
 
     @Test
@@ -279,7 +313,7 @@ class HomePullRefreshUiPolicyTest {
     @Test
     fun `stable md3 screenshot pull offset follows finger back toward top`() {
         assertEquals(
-            0.41f,
+            0.25f,
             resolveStablePullContentOffsetFraction(
                 distanceFraction = 0.5f,
                 isRefreshing = false,
@@ -416,9 +450,9 @@ class HomePullRefreshUiPolicyTest {
     }
 
     @Test
-    fun `stable pull content offset keeps md3 content pinned`() {
+    fun `stable pull content offset lets md3 content follow finger`() {
         assertEquals(
-            0f,
+            0.6f,
             resolveStablePullContentOffsetFraction(
                 distanceFraction = 1.2f,
                 isRefreshing = false,
