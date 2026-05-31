@@ -204,4 +204,32 @@ class TopTabIndicatorGeometryTest {
             0.01f
         )
     }
+
+    @Test
+    fun `md3 top tab row stays vertically centered inside outer chrome`() {
+        assertEquals(
+            0f,
+            resolveMd3TopTabRowVerticalTranslationDp(
+                skinPlainStyle = false,
+                hasOuterChromeSurface = true
+            ),
+            0.01f
+        )
+        assertEquals(
+            -4f,
+            resolveMd3TopTabRowVerticalTranslationDp(
+                skinPlainStyle = false,
+                hasOuterChromeSurface = false
+            ),
+            0.01f
+        )
+        assertEquals(
+            0f,
+            resolveMd3TopTabRowVerticalTranslationDp(
+                skinPlainStyle = true,
+                hasOuterChromeSurface = false
+            ),
+            0.01f
+        )
+    }
 }

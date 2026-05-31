@@ -392,6 +392,14 @@ internal fun resolveMd3TopTabActionContentBottomPadding(): Dp = 4.dp
 
 internal fun resolveMd3TopTabVerticalLiftDp(): Float = 4f
 
+internal fun resolveMd3TopTabRowVerticalTranslationDp(
+    skinPlainStyle: Boolean,
+    hasOuterChromeSurface: Boolean
+): Float {
+    if (skinPlainStyle || hasOuterChromeSurface) return 0f
+    return -resolveMd3TopTabVerticalLiftDp()
+}
+
 internal fun resolveMd3TopTabIndicatorBottomPadding(): Dp = 8.dp
 
 internal fun resolveHomeSkinTopTabActionButtonSize(): Dp = 44.dp
@@ -845,10 +853,11 @@ private fun LightweightHomeTopTabs(
             verticalGapDp = dockIndicatorVerticalGap.value,
             minHeightDp = if (hasOuterChromeSurface) 2f else 30f
         ).dp
-        val md3TopTabVerticalLiftPx = if (skinPlainStyle) {
-            0f
-        } else {
-            with(density) { resolveMd3TopTabVerticalLiftDp().dp.toPx() }
+        val md3TopTabRowVerticalTranslationPx = with(density) {
+            resolveMd3TopTabRowVerticalTranslationDp(
+                skinPlainStyle = skinPlainStyle,
+                hasOuterChromeSurface = hasOuterChromeSurface
+            ).dp.toPx()
         }
         val rowScrollOffsetPx by remember(itemWidth, density, listState) {
             derivedStateOf {
@@ -1059,7 +1068,7 @@ private fun LightweightHomeTopTabs(
                 .fillMaxSize()
                 .graphicsLayer {
                     translationY = if (effectiveRenderer == HomeTopTabRenderer.MD3) {
-                        -md3TopTabVerticalLiftPx
+                        md3TopTabRowVerticalTranslationPx
                     } else {
                         0f
                     }
