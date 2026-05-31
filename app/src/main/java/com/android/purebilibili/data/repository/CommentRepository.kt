@@ -542,6 +542,30 @@ object CommentRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun searchMentionUsers(keyword: String = ""): Result<List<MentionSearchUser>> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.searchMentionUsers(keyword.trim().takeIf { it.isNotEmpty() })
+            if (response.code == 0) {
+                val users = response.data
+                    ?.groups
+                    .orEmpty()
+                    .flatMap { it.items }
+                    .filter { it.uid > 0L && it.name.isNotBlank() }
+                    .distinctBy { it.uid }
+                Result.success(users)
+            } else {
+                val errorMsg = when (response.code) {
+                    -101 -> "请先登录后使用@好友"
+                    else -> response.message.ifEmpty { "搜索@好友失败 (${response.code})" }
+                }
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Logger.e("CommentRepo", "searchMentionUsers exception: keyword=$keyword", e)
+            Result.failure(e)
+        }
+    }
     
     /**
      * [新增] 发送评论

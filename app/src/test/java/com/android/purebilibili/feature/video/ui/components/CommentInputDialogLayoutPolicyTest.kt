@@ -44,4 +44,32 @@ class CommentInputDialogLayoutPolicyTest {
         assertEquals(" 01:05 ", resolveCommentProgressInsertText(65_000L))
         assertEquals(" 00:00 ", resolveCommentProgressInsertText(-1L))
     }
+
+    @Test
+    fun activeMentionQuery_readsTextAfterLastAtBeforeCursor() {
+        val query = resolveActiveCommentMentionQuery("一起 @社会", cursor = 6)
+
+        assertEquals(3, query?.atIndex)
+        assertEquals("社会", query?.query)
+    }
+
+    @Test
+    fun activeMentionQuery_ignoresWhitespaceSeparatedAt() {
+        val query = resolveActiveCommentMentionQuery("@社会 易", cursor = 5)
+
+        assertEquals(null, query)
+    }
+
+    @Test
+    fun mentionInsert_replacesActiveQueryAtCursor() {
+        val (text, selection) = insertCommentMentionText(
+            text = "一起 @社会",
+            cursor = 6,
+            mentionName = "社会易姐QwQ"
+        )
+
+        assertEquals("一起 @社会易姐QwQ ", text)
+        assertEquals(text.length, selection.start)
+        assertEquals(text.length, selection.end)
+    }
 }

@@ -783,6 +783,11 @@ interface BilibiliApi {
         @Query("type") type: Int
     ): ReplyCountResponse
 
+    @GET("x/polymer/web-dynamic/v1/mention/search")
+    suspend fun searchMentionUsers(
+        @Query("keyword") keyword: String? = null
+    ): MentionSearchResponse
+
     // [新增] 发送评论
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/v2/reply/add")

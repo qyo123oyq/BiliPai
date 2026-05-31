@@ -4089,6 +4089,7 @@ fun VideoDetailScreen(
         val isSendingComment by viewModel.isSendingComment.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext) // 暂时复用 ViewModel 状态?
         val replyingToComment by viewModel.replyingToComment.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext)
         val emotePackages by viewModel.emotePackages.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext) // [新增]
+        val mentionSearchState by viewModel.commentMentionSearchState.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext)
         
         com.android.purebilibili.feature.video.ui.components.CommentInputDialog(
             visible = showCommentInput,
@@ -4099,6 +4100,10 @@ fun VideoDetailScreen(
             canUploadImage = commentState.canUploadImage,
             canInputComment = commentState.canInputComment,
             emotePackages = emotePackages, // [新增]
+            mentionUsers = mentionSearchState.users,
+            isMentionSearching = mentionSearchState.isLoading,
+            mentionSearchError = mentionSearchState.errorMessage,
+            onMentionSearchQueryChange = viewModel::searchCommentMentionUsers,
             currentVideoPositionMsProvider = { playerState.player.currentPosition.coerceAtLeast(0L) },
             onSend = { message, imageUris, syncToDynamic ->
                 viewModel.sendComment(message, imageUris, syncToDynamic)

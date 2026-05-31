@@ -128,6 +128,13 @@ import com.android.purebilibili.feature.video.subtitle.resolveDefaultSubtitleLan
 
 private const val PLAYBACK_CDN_FIRST_FRAME_FALLBACK_TIMEOUT_MS = 2_500L
 
+data class CommentMentionSearchUiState(
+    val query: String = "",
+    val users: List<MentionSearchUser> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
 data class SponsorSkipUiState(
     val visible: Boolean = false,
     val segmentId: String? = null,
@@ -3440,6 +3447,7 @@ class PlayerViewModel : ViewModel() {
     fun hideCommentInputDialog() {
         _showCommentDialog.value = false
         clearReplyingTo()
+        clearCommentMentionSearch()
     }
 
     // ========== 弹幕发送 ==========
@@ -3718,6 +3726,11 @@ class PlayerViewModel : ViewModel() {
     
     private val _replyingToComment = MutableStateFlow<com.android.purebilibili.data.model.response.ReplyItem?>(null)
     val replyingToComment = _replyingToComment.asStateFlow()
+
+    private val _commentMentionSearchState = MutableStateFlow(CommentMentionSearchUiState())
+    val commentMentionSearchState = _commentMentionSearchState.asStateFlow()
+
+    private var commentMentionSearchJob: Job? = null
     
     fun setCommentInput(text: String) {
         _commentInput.value = text
@@ -3729,6 +3742,49 @@ class PlayerViewModel : ViewModel() {
     
     fun clearReplyingTo() {
         _replyingToComment.value = null
+    }
+
+    fun searchCommentMentionUsers(query: String) {
+        if (_commentMentionSearchState.value.query == query && commentMentionSearchJob?.isActive == true) return
+
+        commentMentionSearchJob?.cancel()
+        _commentMentionSearchState.update {
+            it.copy(query = query, isLoading = true, errorMessage = null)
+        }
+        commentMentionSearchJob = viewModelScope.launch {
+            if (query.isNotBlank()) {
+                delay(250L)
+            }
+            com.android.purebilibili.data.repository.CommentRepository
+                .searchMentionUsers(query)
+                .onSuccess { users ->
+                    _commentMentionSearchState.update {
+                        if (it.query == query) {
+                            it.copy(users = users, isLoading = false, errorMessage = null)
+                        } else {
+                            it
+                        }
+                    }
+                }
+                .onFailure { error ->
+                    _commentMentionSearchState.update {
+                        if (it.query == query) {
+                            it.copy(
+                                users = emptyList(),
+                                isLoading = false,
+                                errorMessage = error.message ?: "搜索@好友失败"
+                            )
+                        } else {
+                            it
+                        }
+                    }
+                }
+        }
+    }
+
+    fun clearCommentMentionSearch() {
+        commentMentionSearchJob?.cancel()
+        _commentMentionSearchState.value = CommentMentionSearchUiState()
     }
     
     /**

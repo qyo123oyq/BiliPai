@@ -2217,6 +2217,7 @@ private fun VideoPageItem(
             val isSendingComment by viewModel.isSendingComment.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext)
             val replyingToComment by viewModel.replyingToComment.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext)
             val emotePackages by viewModel.emotePackages.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext)
+            val mentionSearchState by viewModel.commentMentionSearchState.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext)
             val commentState by commentViewModel.commentState.collectAsState(context = kotlin.coroutines.EmptyCoroutineContext)
             val commentFraudDetectionEnabled by com.android.purebilibili.core.store.SettingsManager
                 .getCommentFraudDetectionEnabled(context)
@@ -2244,6 +2245,10 @@ private fun VideoPageItem(
                 canUploadImage = commentState.canUploadImage,
                 canInputComment = commentState.canInputComment,
                 emotePackages = emotePackages,
+                mentionUsers = mentionSearchState.users,
+                isMentionSearching = mentionSearchState.isLoading,
+                mentionSearchError = mentionSearchState.errorMessage,
+                onMentionSearchQueryChange = viewModel::searchCommentMentionUsers,
                 currentVideoPositionMsProvider = { exoPlayer.currentPosition.coerceAtLeast(0L) },
                 onSend = { message, imageUris, syncToDynamic ->
                     viewModel.sendComment(

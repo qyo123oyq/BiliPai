@@ -585,6 +585,39 @@ data class ReplyPicture(
 )
 
 @Serializable
+data class MentionSearchResponse(
+    val code: Int = 0,
+    val message: String = "",
+    val data: MentionSearchData? = null
+)
+
+@Serializable
+data class MentionSearchData(
+    val groups: List<MentionSearchGroup> = emptyList()
+)
+
+@Serializable
+data class MentionSearchGroup(
+    @SerialName("group_name")
+    val groupName: String = "",
+    @SerialName("group_type")
+    val groupType: Int = 0,
+    val items: List<MentionSearchUser> = emptyList()
+)
+
+@Serializable
+data class MentionSearchUser(
+    @Serializable(with = FlexibleLongSerializer::class)
+    val uid: Long = 0,
+    val name: String = "",
+    val face: String = "",
+    @Serializable(with = FlexibleIntSerializer::class)
+    val fans: Int = 0,
+    @SerialName("official_verify_type")
+    val officialVerifyType: Int = -1
+)
+
+@Serializable
 data class ReplyEmote(
     val id: Long = 0,
     val text: String = "",
