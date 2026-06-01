@@ -37,6 +37,7 @@ class DampedDragAnimationPolicyTest {
         assertTrue(source.contains("private val velocityAnimationSpec = spring(0.5f, 300f, 0.01f)"))
         assertTrue(source.contains("inspectDragGestures("))
         assertTrue(source.contains("awaitFirstDown(false, PointerEventPass.Initial)"))
+        assertTrue(source.contains("down.consume()"))
         assertTrue(dragSource.contains("updateValue(targetValue + dragAmountPx / itemWidthPx)"))
         assertTrue(dragSource.contains("offsetAnimation.snapTo(offsetAnimation.value + dragAmountPx)"))
         assertTrue(releaseSource.contains("targetValue.fastRoundToInt().fastCoerceIn(0, itemCount - 1)"))

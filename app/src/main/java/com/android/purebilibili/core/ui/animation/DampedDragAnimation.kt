@@ -321,7 +321,10 @@ internal fun Modifier.horizontalDragGesture(
     notifyIndexChanged
 ) {
     inspectDragGestures(
-        onDragStart = { dragState.onDrag(0f, itemWidthPx) },
+        onDragStart = { down ->
+            down.consume()
+            dragState.onDrag(0f, itemWidthPx)
+        },
         onDragEnd = {
             dragState.onDragEnd(
                 velocityX = 0f,
