@@ -9,17 +9,30 @@ import org.junit.Test
 class VideoCardScrollLiteVisualPolicyTest {
 
     @Test
-    fun `normal mode keeps full elegant card visuals`() {
+    fun `normal mode removes cover gradient behind compact stats`() {
         val policy = resolveVideoCardScrollLiteVisualPolicy(
             scrollLiteModeEnabled = false,
             compactStatsOnCover = true
         )
 
         assertEquals(1f, policy.coverShadowElevationDp, 0.0001f)
-        assertTrue(policy.showCoverGradientMask)
+        assertFalse(policy.showCoverGradientMask)
         assertTrue(policy.showHistoryProgressBar)
         assertTrue(policy.showCompactStatsOnCover)
         assertFalse(policy.showSecondaryStatsRow)
+    }
+
+    @Test
+    fun `normal mode keeps cover gradient when stats move below cover`() {
+        val policy = resolveVideoCardScrollLiteVisualPolicy(
+            scrollLiteModeEnabled = false,
+            compactStatsOnCover = false
+        )
+
+        assertTrue(policy.showCoverGradientMask)
+        assertTrue(policy.showHistoryProgressBar)
+        assertFalse(policy.showCompactStatsOnCover)
+        assertTrue(policy.showSecondaryStatsRow)
     }
 
     @Test
