@@ -75,7 +75,9 @@ import com.android.purebilibili.core.ui.transition.LocalVideoCardSharedElementSo
 import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionMotionSpec
 import com.android.purebilibili.core.ui.transition.resolveVideoSharedTransitionVisualSpec
 import com.android.purebilibili.core.ui.transition.shouldEnableVideoCoverSharedTransition
+import com.android.purebilibili.core.ui.transition.shouldEnableVideoMetadataSharedTransition
 import com.android.purebilibili.core.ui.transition.videoCoverSharedElementKey
+import com.android.purebilibili.core.ui.transition.videoTitleSharedElementKey
 import com.android.purebilibili.core.util.CardPositionManager
 import com.android.purebilibili.data.model.response.VideoItem
 import com.android.purebilibili.data.repository.VideoRepository
@@ -870,6 +872,10 @@ private fun PartitionVideoRow(
         hasSharedTransitionScope = sharedTransitionScope != null,
         hasAnimatedVisibilityScope = animatedVisibilityScope != null
     ) && !sharedElementSourceRoute.isNullOrBlank()
+    val metadataSharedEnabled = shouldEnableVideoMetadataSharedTransition(
+        coverSharedEnabled = coverSharedEnabled,
+        isQuickReturnLimited = false
+    )
     val sharedTransitionMotionSpec = remember(sharedElementSourceRoute) {
         resolveVideoCardSharedTransitionMotionSpec(
             sourceRoute = sharedElementSourceRoute,
@@ -971,6 +977,20 @@ private fun PartitionVideoRow(
                 .heightIn(min = 82.dp)
                 .padding(vertical = 2.dp)
         ) {
+            var titleModifier: Modifier = Modifier.fillMaxWidth()
+            if (metadataSharedEnabled) {
+                with(requireNotNull(sharedTransitionScope)) {
+                    titleModifier = titleModifier.sharedBounds(
+                        sharedContentState = rememberSharedContentState(
+                            key = videoTitleSharedElementKey(video.bvid)
+                        ),
+                        animatedVisibilityScope = requireNotNull(animatedVisibilityScope),
+                        boundsTransform = { _, _ ->
+                            spring(dampingRatio = 0.8f, stiffness = 200f)
+                        }
+                    )
+                }
+            }
             Text(
                 text = video.title,
                 maxLines = 2,
@@ -978,7 +998,8 @@ private fun PartitionVideoRow(
                 fontSize = 16.sp,
                 lineHeight = 22.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = titleModifier
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
