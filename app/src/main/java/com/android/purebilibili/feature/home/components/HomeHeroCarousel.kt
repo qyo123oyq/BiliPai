@@ -3,18 +3,21 @@ package com.android.purebilibili.feature.home.components
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -62,6 +67,7 @@ import com.android.purebilibili.feature.home.resolveHomeHeroCarouselCardTransfor
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun HomeHeroCarousel(
     videos: List<VideoItem>,
@@ -74,16 +80,19 @@ internal fun HomeHeroCarousel(
 
     val pagerState = rememberPagerState { videos.size }
     val scope = rememberCoroutineScope()
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(vertical = 4.dp)
     ) {
+        val sidePeek = 12.dp
+        val pageWidth = (maxWidth - sidePeek * 2).coerceAtLeast(0.dp)
         HorizontalPager(
             state = pagerState,
             key = { page -> videos[page].bvid.ifBlank { "hero_$page" } },
-            pageSpacing = 18.dp,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp),
+            pageSize = PageSize.Fixed(pageWidth),
+            pageSpacing = 0.dp,
+            contentPadding = PaddingValues(horizontal = sidePeek),
             modifier = Modifier.fillMaxWidth()
         ) { page ->
             val pageOffset = (
@@ -171,9 +180,12 @@ private fun HomeHeroCarouselCard(
         tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.38f)
+            .aspectRatio(1.34f)
+            .zIndex(transform.zIndex)
             .graphicsLayer {
+                transformOrigin = TransformOrigin(transform.pivotFractionX, 0.5f)
                 rotationY = transform.rotationY
+                translationX = transform.translationXFraction * size.width
                 scaleX = transform.scale
                 scaleY = transform.scale
                 alpha = transform.alpha

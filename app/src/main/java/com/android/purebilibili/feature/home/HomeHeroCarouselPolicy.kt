@@ -6,7 +6,10 @@ internal data class HomeHeroCarouselCardTransform(
     val rotationY: Float,
     val scale: Float,
     val alpha: Float,
-    val cameraDistanceMultiplier: Float
+    val cameraDistanceMultiplier: Float,
+    val translationXFraction: Float,
+    val pivotFractionX: Float,
+    val zIndex: Float
 )
 
 internal fun <T> selectHomeHeroCarouselItems(
@@ -30,10 +33,18 @@ internal fun resolveHomeHeroCarouselCardTransform(
 ): HomeHeroCarouselCardTransform {
     val clampedOffset = pageOffset.coerceIn(-1f, 1f)
     val distance = kotlin.math.abs(clampedOffset)
+    val pivotFractionX = when {
+        clampedOffset < -0.001f -> 0f
+        clampedOffset > 0.001f -> 1f
+        else -> 0.5f
+    }
     return HomeHeroCarouselCardTransform(
-        rotationY = -clampedOffset * 46f,
-        scale = 1f - distance * 0.08f,
-        alpha = 1f - distance * 0.24f,
-        cameraDistanceMultiplier = 18f
+        rotationY = -clampedOffset * 58f,
+        scale = 1f - distance * 0.1f,
+        alpha = 1f - distance * 0.18f,
+        cameraDistanceMultiplier = 10f,
+        translationXFraction = clampedOffset * 0.1f,
+        pivotFractionX = pivotFractionX,
+        zIndex = 1f - distance
     )
 }
