@@ -47,6 +47,7 @@ import com.android.purebilibili.core.ui.components.UpBadgeName
 import com.android.purebilibili.core.util.responsiveContentWidth
 import com.android.purebilibili.data.model.response.VideoItem
 import com.android.purebilibili.feature.home.components.BottomBarLiquidSegmentedControl
+import com.android.purebilibili.feature.home.components.HomeHeroCarousel
 import com.android.purebilibili.feature.home.components.HomeUiSkinDecoration
 import com.android.purebilibili.feature.home.components.cards.ElegantVideoCard
 import com.android.purebilibili.feature.home.components.cards.LiveRoomCard
@@ -129,6 +130,9 @@ internal fun HomeCategoryPageContent(
     showUpBadges: Boolean = true,
     homeDurationStyle: HomeDurationStyle = HomeDurationStyle.OUTSIDE_COVER,
     homeFeedCardStyle: HomeFeedCardStyle = HomeFeedCardStyle.CURRENT,
+    homeHeroCarouselEnabled: Boolean = true,
+    homeHeroCarouselAutoplayEnabled: Boolean = false,
+    onGetPreviewUrl: suspend (String, Long) -> String? = { _, _ -> null },
     oldContentAnchorBvid: String? = null,
     oldContentStartIndex: Int? = null,
     todayWatchEnabled: Boolean = false,
@@ -282,6 +286,37 @@ internal fun HomeCategoryPageContent(
         } else {
             // Video Category Content
             if (category == HomeCategory.RECOMMEND) {
+                val carouselVideos = selectHomeHeroCarouselItems(categoryState.videos)
+                if (shouldShowHomeHeroCarousel(
+                        enabled = homeHeroCarouselEnabled,
+                        category = category,
+                        itemCount = carouselVideos.size
+                    )
+                ) {
+                    item(
+                        key = "home_hero_carousel",
+                        contentType = "home_hero_carousel",
+                        span = { GridItemSpan(gridColumns) }
+                    ) {
+                        HomeHeroCarousel(
+                            videos = carouselVideos,
+                            autoplayEnabled = homeHeroCarouselAutoplayEnabled,
+                            onVideoClick = { video ->
+                                onVideoClick(
+                                    HomeVideoClickRequest(
+                                        bvid = video.bvid,
+                                        dynamicId = video.dynamicId,
+                                        cid = video.cid,
+                                        coverUrl = video.pic,
+                                        isVerticalVideo = video.isVertical,
+                                        source = HomeVideoClickSource.GRID
+                                    )
+                                )
+                            },
+                            onGetPreviewUrl = onGetPreviewUrl
+                        )
+                    }
+                }
                 if (todayWatchEnabled) {
                     item(span = { GridItemSpan(gridColumns) }) {
                         TodayWatchPlanCard(

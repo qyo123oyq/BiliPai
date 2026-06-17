@@ -273,6 +273,36 @@ class BottomBarLayoutPolicyTest {
     }
 
     @Test
+    fun `bottom search mode keeps only home as dock tab`() {
+        assertEquals(
+            listOf(BottomNavItem.HOME),
+            resolveBottomBarVisibleItemsForSearchMode(
+                visibleItems = listOf(
+                    BottomNavItem.HOME,
+                    BottomNavItem.DYNAMIC,
+                    BottomNavItem.HISTORY,
+                    BottomNavItem.PROFILE
+                ),
+                bottomBarSearchEnabled = true
+            )
+        )
+        assertEquals(
+            listOf(BottomNavItem.HOME),
+            resolveBottomBarVisibleItemsForSearchMode(
+                visibleItems = listOf(BottomNavItem.DYNAMIC, BottomNavItem.HISTORY),
+                bottomBarSearchEnabled = true
+            )
+        )
+        assertEquals(
+            listOf(BottomNavItem.HOME, BottomNavItem.DYNAMIC),
+            resolveBottomBarVisibleItemsForSearchMode(
+                visibleItems = listOf(BottomNavItem.HOME, BottomNavItem.DYNAMIC),
+                bottomBarSearchEnabled = false
+            )
+        )
+    }
+
+    @Test
     fun `bottom search auto expands away from home top in scroll expand mode`() {
         assertEquals(
             false,
@@ -482,9 +512,9 @@ class BottomBarLayoutPolicyTest {
     }
 
     @Test
-    fun `home icon click toggles search and dock only while already on home`() {
+    fun `home icon click does not toggle bottom search`() {
         assertEquals(
-            BottomBarSearchExpansionOverride.EXPANDED,
+            null,
             resolveBottomBarSearchExpansionOverrideOnNavItemClick(
                 currentItem = BottomNavItem.HOME,
                 clickedItem = BottomNavItem.HOME,
@@ -493,7 +523,7 @@ class BottomBarLayoutPolicyTest {
             )
         )
         assertEquals(
-            BottomBarSearchExpansionOverride.COLLAPSED,
+            null,
             resolveBottomBarSearchExpansionOverrideOnNavItemClick(
                 currentItem = BottomNavItem.HOME,
                 clickedItem = BottomNavItem.HOME,
@@ -501,20 +531,30 @@ class BottomBarLayoutPolicyTest {
                 effectiveSearchExpanded = true
             )
         )
+    }
+
+    @Test
+    fun `search tab click toggles bottom search only while already on home`() {
         assertEquals(
-            null,
-            resolveBottomBarSearchExpansionOverrideOnNavItemClick(
+            BottomBarSearchExpansionOverride.EXPANDED,
+            resolveBottomBarSearchExpansionOverrideOnSearchClick(
                 currentItem = BottomNavItem.HOME,
-                clickedItem = BottomNavItem.DYNAMIC,
                 bottomBarSearchEnabled = true,
                 effectiveSearchExpanded = false
             )
         )
         assertEquals(
+            BottomBarSearchExpansionOverride.COLLAPSED,
+            resolveBottomBarSearchExpansionOverrideOnSearchClick(
+                currentItem = BottomNavItem.HOME,
+                bottomBarSearchEnabled = true,
+                effectiveSearchExpanded = true
+            )
+        )
+        assertEquals(
             null,
-            resolveBottomBarSearchExpansionOverrideOnNavItemClick(
+            resolveBottomBarSearchExpansionOverrideOnSearchClick(
                 currentItem = BottomNavItem.HISTORY,
-                clickedItem = BottomNavItem.HOME,
                 bottomBarSearchEnabled = true,
                 effectiveSearchExpanded = false
             )

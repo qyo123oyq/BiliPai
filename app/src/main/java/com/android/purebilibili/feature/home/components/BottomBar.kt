@@ -725,6 +725,14 @@ internal fun resolveBottomBarSearchEnabledForItem(
     return bottomBarSearchEnabled && currentItem == BottomNavItem.HOME
 }
 
+internal fun resolveBottomBarVisibleItemsForSearchMode(
+    visibleItems: List<BottomNavItem>,
+    bottomBarSearchEnabled: Boolean
+): List<BottomNavItem> {
+    if (!bottomBarSearchEnabled) return visibleItems
+    return listOf(BottomNavItem.HOME)
+}
+
 internal enum class BottomBarSearchExpansionOverride {
     FOLLOW_AUTO,
     EXPANDED,
@@ -751,9 +759,16 @@ internal fun resolveBottomBarSearchExpansionOverrideOnNavItemClick(
     bottomBarSearchEnabled: Boolean,
     effectiveSearchExpanded: Boolean
 ): BottomBarSearchExpansionOverride? {
-    if (!bottomBarSearchEnabled || currentItem != BottomNavItem.HOME || clickedItem != BottomNavItem.HOME) {
-        return null
-    }
+    // 首页标签只负责重选刷新；搜索展开/收起交给独立搜索槽位，避免两个意图共用一次点击。
+    return null
+}
+
+internal fun resolveBottomBarSearchExpansionOverrideOnSearchClick(
+    currentItem: BottomNavItem,
+    bottomBarSearchEnabled: Boolean,
+    effectiveSearchExpanded: Boolean
+): BottomBarSearchExpansionOverride? {
+    if (!bottomBarSearchEnabled || currentItem != BottomNavItem.HOME) return null
     return if (effectiveSearchExpanded) {
         BottomBarSearchExpansionOverride.COLLAPSED
     } else {
@@ -2267,6 +2282,12 @@ fun FrostedBottomBar(
     val normalizedLabelMode = normalizeBottomBarLabelMode(labelMode)
     val showIcon = shouldShowBottomBarIcon(normalizedLabelMode)
     val showText = shouldShowBottomBarText(normalizedLabelMode)
+    val bottomBarVisibleItems = remember(visibleItems, homeSettings.isBottomBarSearchEnabled) {
+        resolveBottomBarVisibleItemsForSearchMode(
+            visibleItems = visibleItems,
+            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled
+        )
+    }
     val windowSizeClass = com.android.purebilibili.core.util.LocalWindowSizeClass.current
     val isTablet = windowSizeClass.isTablet
     if (isFloating) {
@@ -2287,7 +2308,7 @@ fun FrostedBottomBar(
             currentItem = currentItem,
             onItemClick = onItemClick,
             modifier = modifier,
-            visibleItems = visibleItems,
+            visibleItems = bottomBarVisibleItems,
             itemColorIndices = itemColorIndices,
             dynamicUnreadCount = dynamicUnreadCount,
             onToggleSidebar = onToggleSidebar,
@@ -2377,6 +2398,12 @@ private fun MaterialBottomBar(
     val normalizedLabelMode = normalizeBottomBarLabelMode(labelMode)
     val showIcon = shouldShowBottomBarIcon(normalizedLabelMode)
     val showText = shouldShowBottomBarText(normalizedLabelMode)
+    val bottomBarVisibleItems = remember(visibleItems, homeSettings.isBottomBarSearchEnabled) {
+        resolveBottomBarVisibleItemsForSearchMode(
+            visibleItems = visibleItems,
+            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled
+        )
+    }
     val glassEnabled = resolveAndroidNativeBottomBarGlassEnabled(
         liquidGlassEnabled = homeSettings.isBottomBarLiquidGlassEnabled,
         blurEnabled = blurEnabled
@@ -2424,7 +2451,7 @@ private fun MaterialBottomBar(
             currentItem = currentItem,
             onItemClick = onItemClick,
             modifier = modifier,
-            visibleItems = visibleItems,
+            visibleItems = bottomBarVisibleItems,
             onToggleSidebar = onToggleSidebar,
             dynamicUnreadCount = dynamicUnreadCount,
             isTablet = isTablet,
@@ -2481,7 +2508,7 @@ private fun MaterialBottomBar(
                 tonalElevation = 0.dp,
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                visibleItems.forEach { item ->
+                bottomBarVisibleItems.forEach { item ->
                     val itemLabel = resolveBottomNavItemLabel(item)
                     val itemContentDescription = resolveBottomNavItemContentDescription(item)
                     val skinIconPath = uiSkinDecoration?.iconPathFor(item, selected = currentItem == item)
@@ -2618,6 +2645,12 @@ private fun MiuixBottomBar(
     val normalizedLabelMode = normalizeBottomBarLabelMode(labelMode)
     val showIcon = shouldShowBottomBarIcon(normalizedLabelMode)
     val showText = shouldShowBottomBarText(normalizedLabelMode)
+    val bottomBarVisibleItems = remember(visibleItems, homeSettings.isBottomBarSearchEnabled) {
+        resolveBottomBarVisibleItemsForSearchMode(
+            visibleItems = visibleItems,
+            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled
+        )
+    }
     val displayMode = resolveMd3BottomBarDisplayMode(labelMode).toMiuixNavigationDisplayMode()
     val glassEnabled = resolveAndroidNativeBottomBarGlassEnabled(
         liquidGlassEnabled = homeSettings.isBottomBarLiquidGlassEnabled,
@@ -2655,7 +2688,7 @@ private fun MiuixBottomBar(
             currentItem = currentItem,
             onItemClick = onItemClick,
             modifier = modifier,
-            visibleItems = visibleItems,
+            visibleItems = bottomBarVisibleItems,
             onToggleSidebar = onToggleSidebar,
             dynamicUnreadCount = dynamicUnreadCount,
             isTablet = isTablet,
@@ -2732,7 +2765,7 @@ private fun MiuixBottomBar(
                 skinTrimTint = uiSkinDecoration?.bottomTrimTint
             )
 
-            visibleItems.forEach { item ->
+            bottomBarVisibleItems.forEach { item ->
                 val itemLabel = resolveBottomNavItemLabel(item)
                 MiuixDockedBottomBarItem(
                     selected = currentItem == item,
@@ -3733,6 +3766,18 @@ private fun KernelSuAlignedBottomBar(
                     expanded = effectiveSearchExpanded,
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
+                    onCompactClick = {
+                        val searchOverride = resolveBottomBarSearchExpansionOverrideOnSearchClick(
+                            currentItem = currentItem,
+                            bottomBarSearchEnabled = searchEnabled,
+                            effectiveSearchExpanded = effectiveSearchExpanded
+                        )
+                        if (searchOverride != null) {
+                            searchExpansionOverride = searchOverride
+                        } else {
+                            onSearchClick()
+                        }
+                    },
                     onSubmit = {
                         val keyword = searchQuery.trim()
                         if (keyword.isEmpty()) {
@@ -4159,6 +4204,7 @@ private fun KernelSuBottomBarSearchSlot(
     expanded: Boolean,
     query: String,
     onQueryChange: (String) -> Unit,
+    onCompactClick: () -> Unit,
     onSubmit: () -> Unit,
     shape: androidx.compose.ui.graphics.Shape,
     miuixBackdrop: MiuixBackdrop?,
@@ -4192,6 +4238,7 @@ private fun KernelSuBottomBarSearchSlot(
             expanded = expanded,
             query = query,
             onQueryChange = onQueryChange,
+            onCompactClick = onCompactClick,
             onSubmit = onSubmit,
             shape = shape,
             miuixBackdrop = miuixBackdrop,
@@ -4222,6 +4269,7 @@ private fun KernelSuBottomBarSearchCapsule(
     expanded: Boolean,
     query: String,
     onQueryChange: (String) -> Unit,
+    onCompactClick: () -> Unit,
     onSubmit: () -> Unit,
     shape: androidx.compose.ui.graphics.Shape,
     miuixBackdrop: MiuixBackdrop?,
@@ -4243,6 +4291,7 @@ private fun KernelSuBottomBarSearchCapsule(
     materialPressProgress: Float
 ) {
     var searchLongPressHeld by remember { mutableStateOf(false) }
+    val currentOnCompactClick by rememberUpdatedState(onCompactClick)
     val currentOnSubmit by rememberUpdatedState(onSubmit)
     val currentHaptic by rememberUpdatedState(haptic)
     val launchSearchFromExpandedBlankQuery = expanded && query.isBlank()
@@ -4318,7 +4367,7 @@ private fun KernelSuBottomBarSearchCapsule(
                             },
                             onTap = {
                                 currentHaptic(HapticType.LIGHT)
-                                currentOnSubmit()
+                                currentOnCompactClick()
                             },
                             onLongPress = {
                                 searchLongPressHeld = true

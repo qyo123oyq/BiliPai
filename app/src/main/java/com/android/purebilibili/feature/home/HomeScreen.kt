@@ -1689,6 +1689,9 @@ fun HomeScreen(
                                      showUpBadges = homeSettings.showHomeUpBadges,
                                      homeDurationStyle = homeSettings.homeDurationStyle,
                                      homeFeedCardStyle = homeFeedCardStyle,
+                                     homeHeroCarouselEnabled = homeSettings.homeHeroCarouselEnabled,
+                                     homeHeroCarouselAutoplayEnabled = homeSettings.homeHeroCarouselAutoplayEnabled,
+                                     onGetPreviewUrl = { bvid, cid -> viewModel.getPreviewVideoUrl(bvid, cid) },
                                      oldContentAnchorBvid = if (shouldShowRecommendOldContentDivider(
                                              currentCategory = category,
                                              refreshNewItemsKey = refreshNewItemsKey,

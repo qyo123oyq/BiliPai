@@ -430,6 +430,12 @@ fun AppearanceSettingsContent(
     val homeFeedCardStyle by SettingsManager
         .getHomeFeedCardStyle(context)
         .collectAsStateWithLifecycle(initialValue = HomeFeedCardStyle.CURRENT)
+    val homeHeroCarouselEnabled by SettingsManager
+        .getHomeHeroCarouselEnabled(context)
+        .collectAsStateWithLifecycle(initialValue = true)
+    val homeHeroCarouselAutoplayEnabled by SettingsManager
+        .getHomeHeroCarouselAutoplayEnabled(context)
+        .collectAsStateWithLifecycle(initialValue = false)
     val themeRoleOverrides by SettingsManager
         .getThemeRoleOverrides(context)
         .collectAsStateWithLifecycle(initialValue = ThemeRoleOverrides())
@@ -1405,6 +1411,46 @@ fun AppearanceSettingsContent(
                             },
                             iconTint = iOSTeal
                         )
+
+                        IOSDivider(modifier = Modifier.padding(start = 16.dp))
+                        IOSSwitchItem(
+                            icon = rememberSettingsSemanticIcon(SettingsIconRole.DISPLAY_STYLE),
+                            title = "首页顶部轮播封面",
+                            subtitle = if (homeHeroCarouselEnabled) {
+                                "推荐页顶部显示官方比例的视频封面轮播"
+                            } else {
+                                "推荐页直接显示普通视频流"
+                            },
+                            checked = homeHeroCarouselEnabled,
+                            onCheckedChange = {
+                                scope.launch {
+                                    SettingsManager.setHomeHeroCarouselEnabled(context, it)
+                                }
+                            },
+                            iconTint = iOSBlue
+                        )
+
+                        AnimatedVisibility(visible = homeHeroCarouselEnabled) {
+                            Column {
+                                IOSDivider(modifier = Modifier.padding(start = 16.dp))
+                                IOSSwitchItem(
+                                    icon = rememberSettingsSemanticIcon(SettingsIconRole.AUTO_PLAY_ON_OPEN),
+                                    title = "轮播默认播放",
+                                    subtitle = if (homeHeroCarouselAutoplayEnabled) {
+                                        "当前轮播项进入视野后静音循环播放"
+                                    } else {
+                                        "默认只展示封面，点开后进入视频详情"
+                                    },
+                                    checked = homeHeroCarouselAutoplayEnabled,
+                                    onCheckedChange = {
+                                        scope.launch {
+                                            SettingsManager.setHomeHeroCarouselAutoplayEnabled(context, it)
+                                        }
+                                    },
+                                    iconTint = iOSBlue
+                                )
+                            }
+                        }
 
                         IOSDivider(modifier = Modifier.padding(start = 16.dp))
                         Column(modifier = Modifier.padding(16.dp)) {

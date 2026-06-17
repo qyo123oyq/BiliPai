@@ -429,6 +429,8 @@ data class HomeSettings(
     val gridColumnCount: Int = 0, // [New] 网格列数 (0=自动, 1-6=固定)
     val homeFeedCardWidthPreset: HomeFeedCardWidthPreset = HomeFeedCardWidthPreset.AUTO,
     val homeFeedCardStyle: HomeFeedCardStyle = HomeFeedCardStyle.OFFICIAL,
+    val homeHeroCarouselEnabled: Boolean = true,
+    val homeHeroCarouselAutoplayEnabled: Boolean = false,
     val cardAnimationEnabled: Boolean = false,    //  卡片进场动画（默认关闭）
     val cardTransitionEnabled: Boolean = true,    //  卡片过渡动画（默认开启）
     val videoTransitionRealtimeBlurEnabled: Boolean = true, // 视频转场实时模糊（默认开启）
@@ -1050,6 +1052,10 @@ object SettingsManager {
     private val KEY_HOME_FEED_CARD_WIDTH_PRESET =
         intPreferencesKey("home_feed_card_width_preset")
     private val KEY_HOME_FEED_CARD_STYLE = intPreferencesKey("home_feed_card_style")
+    private val KEY_HOME_HERO_CAROUSEL_ENABLED =
+        booleanPreferencesKey("home_hero_carousel_enabled")
+    private val KEY_HOME_HERO_CAROUSEL_AUTOPLAY_ENABLED =
+        booleanPreferencesKey("home_hero_carousel_autoplay_enabled")
     //  [新增] 卡片动画开关
     private val KEY_CARD_ANIMATION_ENABLED = booleanPreferencesKey("card_animation_enabled")
     //  [新增] 卡片过渡动画开关
@@ -1175,6 +1181,9 @@ object SettingsManager {
             homeFeedCardStyle = HomeFeedCardStyle.fromValue(
                 preferences[KEY_HOME_FEED_CARD_STYLE] ?: HomeFeedCardStyle.OFFICIAL.value
             ),
+            homeHeroCarouselEnabled = preferences[KEY_HOME_HERO_CAROUSEL_ENABLED] ?: true,
+            homeHeroCarouselAutoplayEnabled =
+                preferences[KEY_HOME_HERO_CAROUSEL_AUTOPLAY_ENABLED] ?: false,
             cardAnimationEnabled = preferences[KEY_CARD_ANIMATION_ENABLED] ?: false,
             cardTransitionEnabled = preferences[KEY_CARD_TRANSITION_ENABLED] ?: true,
             videoTransitionRealtimeBlurEnabled =
@@ -2124,6 +2133,28 @@ object SettingsManager {
     suspend fun setHomeFeedCardStyle(context: Context, style: HomeFeedCardStyle) {
         context.settingsDataStore.edit { preferences ->
             preferences[KEY_HOME_FEED_CARD_STYLE] = style.value
+        }
+    }
+
+    fun getHomeHeroCarouselEnabled(context: Context): Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[KEY_HOME_HERO_CAROUSEL_ENABLED] ?: true
+        }
+
+    suspend fun setHomeHeroCarouselEnabled(context: Context, value: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[KEY_HOME_HERO_CAROUSEL_ENABLED] = value
+        }
+    }
+
+    fun getHomeHeroCarouselAutoplayEnabled(context: Context): Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[KEY_HOME_HERO_CAROUSEL_AUTOPLAY_ENABLED] ?: false
+        }
+
+    suspend fun setHomeHeroCarouselAutoplayEnabled(context: Context, value: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[KEY_HOME_HERO_CAROUSEL_AUTOPLAY_ENABLED] = value
         }
     }
 
@@ -5676,6 +5707,8 @@ object SettingsManager {
                 SettingsShareSection.APPEARANCE
             ),
             IntShareablePreferenceDefinition(KEY_HOME_FEED_CARD_STYLE, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_HOME_HERO_CAROUSEL_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_HOME_HERO_CAROUSEL_AUTOPLAY_ENABLED, SettingsShareSection.APPEARANCE),
             BooleanShareablePreferenceDefinition(KEY_CARD_ANIMATION_ENABLED, SettingsShareSection.APPEARANCE),
             BooleanShareablePreferenceDefinition(KEY_UI_ENTRANCE_ANIMATION_ENABLED, SettingsShareSection.APPEARANCE),
             BooleanShareablePreferenceDefinition(KEY_CARD_TRANSITION_ENABLED, SettingsShareSection.APPEARANCE),
