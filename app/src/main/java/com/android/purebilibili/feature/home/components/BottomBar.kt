@@ -159,6 +159,7 @@ import androidx.compose.ui.Modifier.Companion.then
 import dev.chrisbanes.haze.hazeSource
 import com.android.purebilibili.core.store.BottomBarLiquidGlassPreset
 import com.android.purebilibili.core.store.BottomBarSearchAutoExpandMode
+import com.android.purebilibili.core.store.BottomBarSearchLayoutMode
 import com.android.purebilibili.core.store.LiquidGlassStyle // [New] Top-level enum
 import com.android.purebilibili.core.store.LiquidGlassMode
 import androidx.compose.animation.core.EaseOut
@@ -504,7 +505,8 @@ internal fun resolveKernelSuBottomBarSearchLayout(
     itemCount: Int,
     minEdgePadding: Dp,
     searchEnabled: Boolean,
-    searchExpanded: Boolean
+    searchExpanded: Boolean,
+    searchLayoutMode: BottomBarSearchLayoutMode = BottomBarSearchLayoutMode.FULL_DOCK
 ): KernelSuBottomBarSearchLayout {
     val baseDockWidth = resolveKernelSuFloatingBottomBarWidth(
         containerWidth = containerWidth,
@@ -524,11 +526,22 @@ internal fun resolveKernelSuBottomBarSearchLayout(
     val searchCircleSize = resolveKernelSuBottomBarSearchCircleSize()
     val minimumDockWidth = searchCircleSize
     val collapsedSearchWidth = searchCircleSize
-    val targetSearchWidth = collapsedSearchWidth
-    val targetDockWidth = minOf(
-        baseDockWidth,
-        (availableWidth - targetSearchWidth - gap).coerceAtLeast(minimumDockWidth)
+    val compactHomeDockSize = searchCircleSize
+    val expandedSearchWidth = minOf(
+        280.dp,
+        (availableWidth - compactHomeDockSize - gap).coerceAtLeast(176.dp)
     )
+    val useCompactLayout = searchLayoutMode == BottomBarSearchLayoutMode.HOME_AND_SEARCH
+    val targetSearchWidth = if (useCompactLayout && searchExpanded) {
+        expandedSearchWidth
+    } else {
+        collapsedSearchWidth
+    }
+    val targetDockWidth = if (useCompactLayout && searchExpanded) {
+        compactHomeDockSize
+    } else {
+        minOf(baseDockWidth, (availableWidth - targetSearchWidth - gap).coerceAtLeast(minimumDockWidth))
+    }
     return KernelSuBottomBarSearchLayout(
         dockWidth = targetDockWidth,
         searchWidth = targetSearchWidth,
@@ -583,6 +596,7 @@ private fun rememberKernelSuBottomBarSearchLayoutState(
     minEdgePadding: Dp,
     searchEnabled: Boolean,
     searchExpanded: Boolean,
+    searchLayoutMode: BottomBarSearchLayoutMode,
     hasUiSkinDecoration: Boolean
 ): KernelSuBottomBarSearchLayoutState {
     val targetSearchLayout = resolveKernelSuBottomBarSearchLayout(
@@ -590,7 +604,8 @@ private fun rememberKernelSuBottomBarSearchLayoutState(
         itemCount = itemCount,
         minEdgePadding = minEdgePadding,
         searchEnabled = searchEnabled,
-        searchExpanded = searchExpanded
+        searchExpanded = searchExpanded,
+        searchLayoutMode = searchLayoutMode
     )
     if (!searchEnabled) {
         val dockWidth by animateDpAsState(
@@ -721,9 +736,15 @@ internal fun resolveBottomBarSearchEnabledForItem(
 
 internal fun resolveBottomBarVisibleItemsForSearchMode(
     visibleItems: List<BottomNavItem>,
-    bottomBarSearchEnabled: Boolean
+    bottomBarSearchEnabled: Boolean,
+    searchLayoutMode: BottomBarSearchLayoutMode = BottomBarSearchLayoutMode.FULL_DOCK
 ): List<BottomNavItem> {
-    return visibleItems
+    if (!bottomBarSearchEnabled) return visibleItems
+    return if (searchLayoutMode == BottomBarSearchLayoutMode.HOME_AND_SEARCH) {
+        listOf(BottomNavItem.HOME)
+    } else {
+        visibleItems
+    }
 }
 
 internal enum class BottomBarSearchExpansionOverride {
@@ -759,9 +780,21 @@ internal fun resolveBottomBarSearchExpansionOverrideOnNavItemClick(
 internal fun resolveBottomBarSearchExpansionOverrideOnSearchClick(
     currentItem: BottomNavItem,
     bottomBarSearchEnabled: Boolean,
-    effectiveSearchExpanded: Boolean
+    effectiveSearchExpanded: Boolean,
+    searchLayoutMode: BottomBarSearchLayoutMode = BottomBarSearchLayoutMode.FULL_DOCK
 ): BottomBarSearchExpansionOverride? {
-    return null
+    if (
+        !bottomBarSearchEnabled ||
+        currentItem != BottomNavItem.HOME ||
+        searchLayoutMode != BottomBarSearchLayoutMode.HOME_AND_SEARCH
+    ) {
+        return null
+    }
+    return if (effectiveSearchExpanded) {
+        BottomBarSearchExpansionOverride.COLLAPSED
+    } else {
+        BottomBarSearchExpansionOverride.EXPANDED
+    }
 }
 
 internal fun shouldResetBottomBarSearchExpansionOverride(
@@ -2270,10 +2303,15 @@ fun FrostedBottomBar(
     val normalizedLabelMode = normalizeBottomBarLabelMode(labelMode)
     val showIcon = shouldShowBottomBarIcon(normalizedLabelMode)
     val showText = shouldShowBottomBarText(normalizedLabelMode)
-    val bottomBarVisibleItems = remember(visibleItems, homeSettings.isBottomBarSearchEnabled) {
+    val bottomBarVisibleItems = remember(
+        visibleItems,
+        homeSettings.isBottomBarSearchEnabled,
+        homeSettings.bottomBarSearchLayoutMode
+    ) {
         resolveBottomBarVisibleItemsForSearchMode(
             visibleItems = visibleItems,
-            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled
+            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled,
+            searchLayoutMode = homeSettings.bottomBarSearchLayoutMode
         )
     }
     val windowSizeClass = com.android.purebilibili.core.util.LocalWindowSizeClass.current
@@ -2319,6 +2357,7 @@ fun FrostedBottomBar(
             forceLowBlurBudget = forceLowBlurBudget,
             bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled,
             bottomBarSearchAutoExpandMode = homeSettings.bottomBarSearchAutoExpandMode,
+            bottomBarSearchLayoutMode = homeSettings.bottomBarSearchLayoutMode,
             onSearchClick = onSearchClick,
             onSearchKeywordSubmit = onSearchKeywordSubmit,
             searchLaunchKey = searchLaunchKey,
@@ -2386,10 +2425,15 @@ private fun MaterialBottomBar(
     val normalizedLabelMode = normalizeBottomBarLabelMode(labelMode)
     val showIcon = shouldShowBottomBarIcon(normalizedLabelMode)
     val showText = shouldShowBottomBarText(normalizedLabelMode)
-    val bottomBarVisibleItems = remember(visibleItems, homeSettings.isBottomBarSearchEnabled) {
+    val bottomBarVisibleItems = remember(
+        visibleItems,
+        homeSettings.isBottomBarSearchEnabled,
+        homeSettings.bottomBarSearchLayoutMode
+    ) {
         resolveBottomBarVisibleItemsForSearchMode(
             visibleItems = visibleItems,
-            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled
+            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled,
+            searchLayoutMode = homeSettings.bottomBarSearchLayoutMode
         )
     }
     val glassEnabled = resolveAndroidNativeBottomBarGlassEnabled(
@@ -2456,6 +2500,7 @@ private fun MaterialBottomBar(
             haptic = haptic,
             bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled,
             bottomBarSearchAutoExpandMode = homeSettings.bottomBarSearchAutoExpandMode,
+            bottomBarSearchLayoutMode = homeSettings.bottomBarSearchLayoutMode,
             onSearchClick = onSearchClick,
             onSearchKeywordSubmit = onSearchKeywordSubmit,
             searchLaunchKey = searchLaunchKey,
@@ -2633,10 +2678,15 @@ private fun MiuixBottomBar(
     val normalizedLabelMode = normalizeBottomBarLabelMode(labelMode)
     val showIcon = shouldShowBottomBarIcon(normalizedLabelMode)
     val showText = shouldShowBottomBarText(normalizedLabelMode)
-    val bottomBarVisibleItems = remember(visibleItems, homeSettings.isBottomBarSearchEnabled) {
+    val bottomBarVisibleItems = remember(
+        visibleItems,
+        homeSettings.isBottomBarSearchEnabled,
+        homeSettings.bottomBarSearchLayoutMode
+    ) {
         resolveBottomBarVisibleItemsForSearchMode(
             visibleItems = visibleItems,
-            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled
+            bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled,
+            searchLayoutMode = homeSettings.bottomBarSearchLayoutMode
         )
     }
     val displayMode = resolveMd3BottomBarDisplayMode(labelMode).toMiuixNavigationDisplayMode()
@@ -2698,6 +2748,7 @@ private fun MiuixBottomBar(
             forceLowBlurBudget = forceLowBlurBudget,
             bottomBarSearchEnabled = homeSettings.isBottomBarSearchEnabled,
             bottomBarSearchAutoExpandMode = homeSettings.bottomBarSearchAutoExpandMode,
+            bottomBarSearchLayoutMode = homeSettings.bottomBarSearchLayoutMode,
             onSearchClick = onSearchClick,
             onSearchKeywordSubmit = onSearchKeywordSubmit,
             searchLaunchKey = searchLaunchKey,
@@ -2947,6 +2998,8 @@ private fun KernelSuAlignedBottomBar(
     bottomBarSearchEnabled: Boolean = false,
     bottomBarSearchAutoExpandMode: BottomBarSearchAutoExpandMode =
         BottomBarSearchAutoExpandMode.EXPAND_AT_HOME_TOP,
+    bottomBarSearchLayoutMode: BottomBarSearchLayoutMode =
+        BottomBarSearchLayoutMode.FULL_DOCK,
     onSearchClick: () -> Unit = {},
     onSearchKeywordSubmit: (String) -> Unit = {},
     searchLaunchKey: Int = 0,
@@ -3149,6 +3202,7 @@ private fun KernelSuAlignedBottomBar(
                 minEdgePadding = tuning.outerHorizontalPaddingDp.dp,
                 searchEnabled = searchEnabled,
                 searchExpanded = effectiveSearchExpanded,
+                searchLayoutMode = bottomBarSearchLayoutMode,
                 hasUiSkinDecoration = uiSkinDecoration != null
             )
             val dockWidth = searchLayoutState.dockWidth
@@ -3157,8 +3211,10 @@ private fun KernelSuAlignedBottomBar(
             val launchAdjustedSearchGap = searchLayoutState.launchAdjustedSearchGap
             val dockHeight = searchLayoutState.dockHeight
             val shellHeight = searchLayoutState.shellHeight
+            val compactSearchLayout =
+                bottomBarSearchLayoutMode == BottomBarSearchLayoutMode.HOME_AND_SEARCH
             val dockContentAlpha by animateFloatAsState(
-                targetValue = 1f,
+                targetValue = if (compactSearchLayout && effectiveSearchExpanded) 0f else 1f,
                 animationSpec = tween(
                     durationMillis = 180,
                     easing = AppMotionEasing.Continuity
@@ -3166,7 +3222,7 @@ private fun KernelSuAlignedBottomBar(
                 label = "bottomBarDockContentAlpha"
             )
             val compactHomeAlpha by animateFloatAsState(
-                targetValue = 0f,
+                targetValue = if (compactSearchLayout && effectiveSearchExpanded) 1f else 0f,
                 animationSpec = tween(
                     durationMillis = 180,
                     easing = AppMotionEasing.Continuity
@@ -3658,7 +3714,7 @@ private fun KernelSuAlignedBottomBar(
                 )
 
                 KernelSuBottomBarInputLayer(
-                    visible = true,
+                    visible = !(compactSearchLayout && effectiveSearchExpanded),
                     visibleItems = visibleItems,
                     isTablet = isTablet,
                     hasSidebarToggle = onToggleSidebar != null,
@@ -3673,7 +3729,7 @@ private fun KernelSuAlignedBottomBar(
                     onSidebarClick = ::handleBottomBarSidebarClick
                 )
 
-                if (searchEnabled && compactHomeAlpha > BottomBarTransientAlphaThreshold) {
+                if (searchEnabled && compactSearchLayout && compactHomeAlpha > BottomBarTransientAlphaThreshold) {
                     Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -3753,7 +3809,8 @@ private fun KernelSuAlignedBottomBar(
                         val searchOverride = resolveBottomBarSearchExpansionOverrideOnSearchClick(
                             currentItem = currentItem,
                             bottomBarSearchEnabled = searchEnabled,
-                            effectiveSearchExpanded = effectiveSearchExpanded
+                            effectiveSearchExpanded = effectiveSearchExpanded,
+                            searchLayoutMode = bottomBarSearchLayoutMode
                         )
                         if (searchOverride != null) {
                             searchExpansionOverride = searchOverride
@@ -4415,7 +4472,7 @@ private fun KernelSuBottomBarSearchVisualContent(
         Icon(
             imageVector = CupertinoIcons.Default.MagnifyingGlass,
             contentDescription = "搜索",
-            tint = if (expanded) accentColor else contentColor,
+            tint = contentColor,
             modifier = Modifier
                 .size(24.dp)
                 .then(

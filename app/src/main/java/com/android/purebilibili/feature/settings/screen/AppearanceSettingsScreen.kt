@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.purebilibili.R
 import com.android.purebilibili.core.store.BottomBarSearchAutoExpandMode
+import com.android.purebilibili.core.store.BottomBarSearchLayoutMode
 import com.android.purebilibili.core.store.HomeDurationStyle
 import com.android.purebilibili.core.store.HomeFeedCardStyle
 import com.android.purebilibili.core.store.HomeWallpaperEffectMode
@@ -419,6 +420,12 @@ fun AppearanceSettingsContent(
             PlaybackSegmentOption(BottomBarSearchAutoExpandMode.DISABLED, "不自动"),
             PlaybackSegmentOption(BottomBarSearchAutoExpandMode.EXPAND_WHEN_SCROLLING_DOWN, "下滑展开"),
             PlaybackSegmentOption(BottomBarSearchAutoExpandMode.EXPAND_AT_HOME_TOP, "顶部展开")
+        )
+    }
+    val bottomBarSearchLayoutOptions = remember {
+        listOf(
+            PlaybackSegmentOption(BottomBarSearchLayoutMode.FULL_DOCK, "完整底栏"),
+            PlaybackSegmentOption(BottomBarSearchLayoutMode.HOME_AND_SEARCH, "首页+搜索")
         )
     }
     val homeUpBadgesVisible by SettingsManager
@@ -1251,6 +1258,16 @@ fun AppearanceSettingsContent(
                         checked = state.bottomBarSearchEnabled,
                         onCheckedChange = { viewModel.toggleBottomBarSearch(it) },
                         iconTint = iOSTeal
+                    )
+
+                    IOSDivider()
+                    IOSSlidingSegmentedSetting(
+                        title = "底栏搜索布局",
+                        subtitle = "完整底栏保留全部入口；首页+搜索只保留首页刷新和搜索",
+                        options = bottomBarSearchLayoutOptions,
+                        selectedValue = state.bottomBarSearchLayoutMode,
+                        enabled = state.bottomBarSearchEnabled,
+                        onSelectionChange = { viewModel.setBottomBarSearchLayoutMode(it) }
                     )
 
                     IOSDivider()

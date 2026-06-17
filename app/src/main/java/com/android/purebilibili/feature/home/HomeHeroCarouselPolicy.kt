@@ -2,7 +2,12 @@ package com.android.purebilibili.feature.home
 
 internal const val HOME_HERO_CAROUSEL_MAX_ITEMS = 8
 internal const val HOME_HERO_CAROUSEL_SIDE_PEEK_DP = 0f
-internal const val HOME_HERO_CAROUSEL_ASPECT_RATIO = 4f / 3f
+internal const val HOME_HERO_CAROUSEL_PHONE_ASPECT_RATIO = 16f / 9f
+internal const val HOME_HERO_CAROUSEL_TABLET_ASPECT_RATIO = 2f
+internal const val HOME_HERO_CAROUSEL_WIDE_ASPECT_RATIO = 21f / 9f
+internal const val HOME_HERO_CAROUSEL_TABLET_BREAKPOINT_DP = 600f
+internal const val HOME_HERO_CAROUSEL_WIDE_BREAKPOINT_DP = 840f
+internal const val HOME_HERO_CAROUSEL_MAX_WIDTH_DP = 840f
 
 internal data class HomeHeroCarouselCardTransform(
     val rotationY: Float,
@@ -44,6 +49,20 @@ internal fun shouldShowHomeHeroCarousel(
     itemCount: Int
 ): Boolean {
     return enabled && category == HomeCategory.RECOMMEND && itemCount > 0
+}
+
+internal fun resolveHomeHeroCarouselAspectRatio(containerWidthDp: Float): Float {
+    return when {
+        containerWidthDp >= HOME_HERO_CAROUSEL_WIDE_BREAKPOINT_DP ->
+            HOME_HERO_CAROUSEL_WIDE_ASPECT_RATIO
+        containerWidthDp >= HOME_HERO_CAROUSEL_TABLET_BREAKPOINT_DP ->
+            HOME_HERO_CAROUSEL_TABLET_ASPECT_RATIO
+        else -> HOME_HERO_CAROUSEL_PHONE_ASPECT_RATIO
+    }
+}
+
+internal fun resolveHomeHeroCarouselWidthDp(containerWidthDp: Float): Float {
+    return containerWidthDp.coerceAtMost(HOME_HERO_CAROUSEL_MAX_WIDTH_DP)
 }
 
 internal fun resolveHomeHeroCarouselCardTransform(

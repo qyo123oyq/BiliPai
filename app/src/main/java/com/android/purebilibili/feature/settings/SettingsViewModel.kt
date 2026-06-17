@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.android.purebilibili.core.store.SettingsManager
 import com.android.purebilibili.core.store.BottomBarSearchAutoExpandMode
+import com.android.purebilibili.core.store.BottomBarSearchLayoutMode
 import com.android.purebilibili.core.store.HomeFeedCardWidthPreset
 import com.android.purebilibili.core.store.LiquidGlassMode
 import com.android.purebilibili.core.store.allManagedAppIconLauncherAliases
@@ -84,6 +85,8 @@ data class SettingsUiState(
     val bottomBarSearchEnabled: Boolean = false,
     val bottomBarSearchAutoExpandMode: BottomBarSearchAutoExpandMode =
         BottomBarSearchAutoExpandMode.EXPAND_AT_HOME_TOP,
+    val bottomBarSearchLayoutMode: BottomBarSearchLayoutMode =
+        BottomBarSearchLayoutMode.FULL_DOCK,
     val androidNativeLiquidGlassEnabled: Boolean = false,
     val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle = com.android.purebilibili.core.store.LiquidGlassStyle.CLASSIC, // [New]
     val liquidGlassMode: LiquidGlassMode = LiquidGlassMode.BALANCED,
@@ -141,6 +144,8 @@ data class ExtraSettings(
     val bottomBarSearchEnabled: Boolean = false,
     val bottomBarSearchAutoExpandMode: BottomBarSearchAutoExpandMode =
         BottomBarSearchAutoExpandMode.EXPAND_AT_HOME_TOP,
+    val bottomBarSearchLayoutMode: BottomBarSearchLayoutMode =
+        BottomBarSearchLayoutMode.FULL_DOCK,
     val androidNativeLiquidGlassEnabled: Boolean = false,
     val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle, // [New]
     val liquidGlassMode: LiquidGlassMode, // [New]
@@ -201,6 +206,7 @@ private data class BaseSettings(
     val bottomBarLiquidGlassEnabled: Boolean,
     val bottomBarSearchEnabled: Boolean,
     val bottomBarSearchAutoExpandMode: BottomBarSearchAutoExpandMode,
+    val bottomBarSearchLayoutMode: BottomBarSearchLayoutMode,
     val androidNativeLiquidGlassEnabled: Boolean,
     val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle, // [New]
     val liquidGlassMode: LiquidGlassMode, // [New]
@@ -304,6 +310,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SettingsManager.getBottomBarLiquidGlassEnabled(context).asAnyFlow(),
         SettingsManager.getBottomBarSearchEnabled(context).asAnyFlow(),
         SettingsManager.getBottomBarSearchAutoExpandMode(context).asAnyFlow(),
+        SettingsManager.getBottomBarSearchLayoutMode(context).asAnyFlow(),
         SettingsManager.getAndroidNativeLiquidGlassEnabled(context).asAnyFlow(),
         SettingsManager.getLiquidGlassStyle(context).asAnyFlow(), // [New]
         SettingsManager.getLiquidGlassMode(context).asAnyFlow(), // [New]
@@ -327,15 +334,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val bottomBarLiquidGlass = values[10] as Boolean
         val bottomBarSearch = values[11] as Boolean
         val bottomBarSearchAutoExpandMode = values[12] as BottomBarSearchAutoExpandMode
-        val androidNativeLiquidGlass = values[13] as Boolean
-        val liquidGlassStyle = values[14] as com.android.purebilibili.core.store.LiquidGlassStyle
-        val liquidGlassMode = values[15] as LiquidGlassMode
-        val liquidGlassStrength = values[16] as Float
-        val liquidGlassProgress = values[17] as Float
-        val tabletUseSidebar = values[18] as Boolean
-        val headerCollapse = values[19] as Boolean
-        val gridColumnCount = values[20] as Int
-        val homeFeedCardWidthPreset = values[21] as HomeFeedCardWidthPreset
+        val bottomBarSearchLayoutMode = values[13] as BottomBarSearchLayoutMode
+        val androidNativeLiquidGlass = values[14] as Boolean
+        val liquidGlassStyle = values[15] as com.android.purebilibili.core.store.LiquidGlassStyle
+        val liquidGlassMode = values[16] as LiquidGlassMode
+        val liquidGlassStrength = values[17] as Float
+        val liquidGlassProgress = values[18] as Float
+        val tabletUseSidebar = values[19] as Boolean
+        val headerCollapse = values[20] as Boolean
+        val gridColumnCount = values[21] as Int
+        val homeFeedCardWidthPreset = values[22] as HomeFeedCardWidthPreset
         
         data class Ui2(
             val f: Boolean,
@@ -351,6 +359,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val blg: Boolean,
             val bbs: Boolean,
             val bbsam: BottomBarSearchAutoExpandMode,
+            val bbslm: BottomBarSearchLayoutMode,
             val anlg: Boolean,
             val lgs: com.android.purebilibili.core.store.LiquidGlassStyle,
             val lgm: LiquidGlassMode,
@@ -375,6 +384,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             bottomBarLiquidGlass,
             bottomBarSearch,
             bottomBarSearchAutoExpandMode,
+            bottomBarSearchLayoutMode,
             androidNativeLiquidGlass,
             liquidGlassStyle,
             liquidGlassMode,
@@ -412,6 +422,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             bottomBarLiquidGlassEnabled = ui2.blg,
             bottomBarSearchEnabled = ui2.bbs,
             bottomBarSearchAutoExpandMode = ui2.bbsam,
+            bottomBarSearchLayoutMode = ui2.bbslm,
             androidNativeLiquidGlassEnabled = ui2.anlg,
             liquidGlassStyle = ui2.lgs, // [New]
             liquidGlassMode = ui2.lgm, // [New]
@@ -503,6 +514,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             bottomBarLiquidGlassEnabled = extra.bottomBarLiquidGlassEnabled,
             bottomBarSearchEnabled = extra.bottomBarSearchEnabled,
             bottomBarSearchAutoExpandMode = extra.bottomBarSearchAutoExpandMode,
+            bottomBarSearchLayoutMode = extra.bottomBarSearchLayoutMode,
             androidNativeLiquidGlassEnabled = extra.androidNativeLiquidGlassEnabled,
             liquidGlassStyle = extra.liquidGlassStyle, // [New]
             liquidGlassMode = extra.liquidGlassMode, // [New]
@@ -563,6 +575,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             bottomBarLiquidGlassEnabled = settings.bottomBarLiquidGlassEnabled,
             bottomBarSearchEnabled = settings.bottomBarSearchEnabled,
             bottomBarSearchAutoExpandMode = settings.bottomBarSearchAutoExpandMode,
+            bottomBarSearchLayoutMode = settings.bottomBarSearchLayoutMode,
             androidNativeLiquidGlassEnabled = settings.androidNativeLiquidGlassEnabled,
             liquidGlassStyle = settings.liquidGlassStyle, // [New]
             liquidGlassMode = settings.liquidGlassMode, // [New]
@@ -868,6 +881,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setBottomBarSearchAutoExpandMode(mode: BottomBarSearchAutoExpandMode) {
         viewModelScope.launch {
             SettingsManager.setBottomBarSearchAutoExpandMode(context, mode)
+        }
+    }
+
+    fun setBottomBarSearchLayoutMode(mode: BottomBarSearchLayoutMode) {
+        viewModelScope.launch {
+            SettingsManager.setBottomBarSearchLayoutMode(context, mode)
         }
     }
 

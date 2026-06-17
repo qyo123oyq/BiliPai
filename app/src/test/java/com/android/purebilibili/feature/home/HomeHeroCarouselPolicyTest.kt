@@ -83,8 +83,16 @@ class HomeHeroCarouselPolicyTest {
     }
 
     @Test
-    fun `carousel uses stable four by three aspect ratio`() {
-        assertEquals(4f / 3f, HOME_HERO_CAROUSEL_ASPECT_RATIO, 0.001f)
+    fun `carousel uses adaptive aspect ratio for phone and tablet`() {
+        assertEquals(16f / 9f, resolveHomeHeroCarouselAspectRatio(containerWidthDp = 393f), 0.001f)
+        assertEquals(2.0f, resolveHomeHeroCarouselAspectRatio(containerWidthDp = 700f), 0.001f)
+        assertEquals(21f / 9f, resolveHomeHeroCarouselAspectRatio(containerWidthDp = 900f), 0.001f)
+    }
+
+    @Test
+    fun `carousel width is capped on large screens`() {
+        assertEquals(393f, resolveHomeHeroCarouselWidthDp(containerWidthDp = 393f), 0.001f)
+        assertEquals(HOME_HERO_CAROUSEL_MAX_WIDTH_DP, resolveHomeHeroCarouselWidthDp(containerWidthDp = 1200f), 0.001f)
     }
 
     @Test

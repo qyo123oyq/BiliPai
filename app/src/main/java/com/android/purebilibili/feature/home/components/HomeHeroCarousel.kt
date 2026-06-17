@@ -57,11 +57,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.VideoItem
-import com.android.purebilibili.feature.home.HOME_HERO_CAROUSEL_ASPECT_RATIO
 import com.android.purebilibili.feature.home.HomeHeroCarouselCardTransform
 import com.android.purebilibili.feature.home.HOME_HERO_CAROUSEL_SIDE_PEEK_DP
+import com.android.purebilibili.feature.home.resolveHomeHeroCarouselAspectRatio
 import com.android.purebilibili.feature.home.resolveHomeHeroCarouselCardTransform
 import com.android.purebilibili.feature.home.resolveHomeHeroCarouselPreviewAlpha
+import com.android.purebilibili.feature.home.resolveHomeHeroCarouselWidthDp
 import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -82,14 +83,18 @@ internal fun HomeHeroCarousel(
             .padding(vertical = 4.dp)
     ) {
         val sidePeek = HOME_HERO_CAROUSEL_SIDE_PEEK_DP.dp
-        val pageWidth = (maxWidth - sidePeek * 2).coerceAtLeast(0.dp)
+        val carouselWidth = resolveHomeHeroCarouselWidthDp(maxWidth.value).dp
+        val pageWidth = (carouselWidth - sidePeek * 2).coerceAtLeast(0.dp)
+        val aspectRatio = resolveHomeHeroCarouselAspectRatio(carouselWidth.value)
         HorizontalPager(
             state = pagerState,
             key = { page -> videos[page].bvid.ifBlank { "hero_$page" } },
             pageSize = PageSize.Fixed(pageWidth),
             pageSpacing = 0.dp,
             contentPadding = PaddingValues(horizontal = sidePeek),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .width(carouselWidth)
+                .align(Alignment.Center)
         ) { page ->
             val pageOffset = (
                 (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
@@ -102,6 +107,7 @@ internal fun HomeHeroCarousel(
                 video = videos[page],
                 transform = transform,
                 activeForPlayback = activeForPlayback,
+                aspectRatio = aspectRatio,
                 onVideoClick = { onVideoClick(videos[page]) },
                 onGetPreviewUrl = onGetPreviewUrl
             )
@@ -109,7 +115,8 @@ internal fun HomeHeroCarousel(
 
         Row(
             modifier = Modifier
-                .align(Alignment.BottomStart)
+                .width(carouselWidth)
+                .align(Alignment.BottomCenter)
                 .padding(start = 28.dp, bottom = 18.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -137,6 +144,7 @@ private fun HomeHeroCarouselCard(
     video: VideoItem,
     transform: HomeHeroCarouselCardTransform,
     activeForPlayback: Boolean,
+    aspectRatio: Float,
     onVideoClick: () -> Unit,
     onGetPreviewUrl: suspend (String, Long) -> String?
 ) {
@@ -154,7 +162,7 @@ private fun HomeHeroCarouselCard(
         shadowElevation = (transform.shadowElevationFraction * 10f).dp,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(HOME_HERO_CAROUSEL_ASPECT_RATIO)
+            .aspectRatio(aspectRatio)
             .zIndex(transform.zIndex)
             .graphicsLayer {
                 transformOrigin = TransformOrigin(transform.pivotFractionX, 0.5f)

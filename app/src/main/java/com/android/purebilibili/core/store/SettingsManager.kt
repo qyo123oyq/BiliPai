@@ -419,6 +419,8 @@ data class HomeSettings(
     val isBottomBarSearchEnabled: Boolean = false,
     val bottomBarSearchAutoExpandMode: BottomBarSearchAutoExpandMode =
         BottomBarSearchAutoExpandMode.EXPAND_AT_HOME_TOP,
+    val bottomBarSearchLayoutMode: BottomBarSearchLayoutMode =
+        BottomBarSearchLayoutMode.FULL_DOCK,
     val androidNativeLiquidGlassEnabled: Boolean = false,
     val liquidGlassStyle: LiquidGlassStyle = LiquidGlassStyle.CLASSIC, // [New]
     val liquidGlassMode: LiquidGlassMode = LiquidGlassMode.BALANCED,
@@ -506,6 +508,16 @@ enum class BottomBarSearchAutoExpandMode(val value: Int, val label: String) {
     companion object {
         fun fromValue(value: Int): BottomBarSearchAutoExpandMode =
             entries.find { it.value == value } ?: EXPAND_AT_HOME_TOP
+    }
+}
+
+enum class BottomBarSearchLayoutMode(val value: Int, val label: String) {
+    FULL_DOCK(0, "完整底栏"),
+    HOME_AND_SEARCH(1, "首页与搜索");
+
+    companion object {
+        fun fromValue(value: Int): BottomBarSearchLayoutMode =
+            entries.find { it.value == value } ?: FULL_DOCK
     }
 }
 
@@ -1032,6 +1044,8 @@ object SettingsManager {
     private val KEY_BOTTOM_BAR_SEARCH_ENABLED = booleanPreferencesKey("bottom_bar_search_enabled")
     private val KEY_BOTTOM_BAR_SEARCH_AUTO_EXPAND_MODE =
         intPreferencesKey("bottom_bar_search_auto_expand_mode")
+    private val KEY_BOTTOM_BAR_SEARCH_LAYOUT_MODE =
+        intPreferencesKey("bottom_bar_search_layout_mode")
     private val KEY_ANDROID_NATIVE_LIQUID_GLASS_ENABLED =
         booleanPreferencesKey("android_native_liquid_glass_enabled")
     private val KEY_LEGACY_ANDROID_NATIVE_TOP_TAB_LIQUID_GLASS_ENABLED =
@@ -1163,6 +1177,10 @@ object SettingsManager {
             bottomBarSearchAutoExpandMode = BottomBarSearchAutoExpandMode.fromValue(
                 preferences[KEY_BOTTOM_BAR_SEARCH_AUTO_EXPAND_MODE]
                     ?: BottomBarSearchAutoExpandMode.EXPAND_AT_HOME_TOP.value
+            ),
+            bottomBarSearchLayoutMode = BottomBarSearchLayoutMode.fromValue(
+                preferences[KEY_BOTTOM_BAR_SEARCH_LAYOUT_MODE]
+                    ?: BottomBarSearchLayoutMode.FULL_DOCK.value
             ),
             androidNativeLiquidGlassEnabled =
                 preferences[KEY_ANDROID_NATIVE_LIQUID_GLASS_ENABLED]
@@ -2803,6 +2821,24 @@ object SettingsManager {
     ) {
         context.settingsDataStore.edit { preferences ->
             preferences[KEY_BOTTOM_BAR_SEARCH_AUTO_EXPAND_MODE] = value.value
+        }
+    }
+
+    fun getBottomBarSearchLayoutMode(context: Context): Flow<BottomBarSearchLayoutMode> =
+        context.settingsDataStore.data
+            .map { preferences ->
+                BottomBarSearchLayoutMode.fromValue(
+                    preferences[KEY_BOTTOM_BAR_SEARCH_LAYOUT_MODE]
+                        ?: BottomBarSearchLayoutMode.FULL_DOCK.value
+                )
+            }
+
+    suspend fun setBottomBarSearchLayoutMode(
+        context: Context,
+        value: BottomBarSearchLayoutMode
+    ) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[KEY_BOTTOM_BAR_SEARCH_LAYOUT_MODE] = value.value
         }
     }
 
@@ -5693,6 +5729,7 @@ object SettingsManager {
             BooleanShareablePreferenceDefinition(KEY_BOTTOM_BAR_BLUR_ENABLED, SettingsShareSection.APPEARANCE),
             BooleanShareablePreferenceDefinition(KEY_BOTTOM_BAR_LIQUID_GLASS_ENABLED, SettingsShareSection.APPEARANCE),
             IntShareablePreferenceDefinition(KEY_BOTTOM_BAR_LIQUID_GLASS_PRESET, SettingsShareSection.APPEARANCE),
+            IntShareablePreferenceDefinition(KEY_BOTTOM_BAR_SEARCH_LAYOUT_MODE, SettingsShareSection.APPEARANCE),
             BooleanShareablePreferenceDefinition(
                 KEY_ANDROID_NATIVE_LIQUID_GLASS_ENABLED,
                 SettingsShareSection.APPEARANCE

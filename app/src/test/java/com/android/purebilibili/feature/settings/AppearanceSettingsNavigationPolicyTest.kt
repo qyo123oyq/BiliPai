@@ -23,6 +23,8 @@ class AppearanceSettingsNavigationPolicyTest {
 
         assertTrue(source.contains("title = \"底栏搜索入口\""))
         assertTrue(source.contains("subtitle = \"在悬浮底栏右侧显示搜索入口\""))
+        assertTrue(source.contains("title = \"底栏搜索布局\""))
+        assertTrue(source.contains("setBottomBarSearchLayoutMode"))
         assertFalse(source.contains("subtitle = \"在悬浮底栏右侧显示可展开搜索框\""))
     }
 

@@ -2,6 +2,7 @@ package com.android.purebilibili.feature.home.components
 
 import androidx.compose.ui.unit.dp
 import com.android.purebilibili.core.store.BottomBarSearchAutoExpandMode
+import com.android.purebilibili.core.store.BottomBarSearchLayoutMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -107,11 +108,28 @@ class BottomBarLayoutPolicyTest {
             itemCount = 4,
             minEdgePadding = 20.dp,
             searchEnabled = true,
-            searchExpanded = true
+            searchExpanded = true,
+            searchLayoutMode = BottomBarSearchLayoutMode.FULL_DOCK
         )
 
         assertEquals(279.dp, layout.dockWidth)
         assertEquals(64.dp, layout.searchWidth)
+        assertEquals(10.dp, layout.gap)
+    }
+
+    @Test
+    fun `compact search layout keeps home dock with expanded search field`() {
+        val layout = resolveKernelSuBottomBarSearchLayout(
+            containerWidth = 393.dp,
+            itemCount = 4,
+            minEdgePadding = 20.dp,
+            searchEnabled = true,
+            searchExpanded = true,
+            searchLayoutMode = BottomBarSearchLayoutMode.HOME_AND_SEARCH
+        )
+
+        assertEquals(resolveKernelSuBottomBarSearchCircleSize(), layout.dockWidth)
+        assertEquals(279.dp, layout.searchWidth)
         assertEquals(10.dp, layout.gap)
     }
 
@@ -303,6 +321,23 @@ class BottomBarLayoutPolicyTest {
             resolveBottomBarVisibleItemsForSearchMode(
                 visibleItems = listOf(BottomNavItem.HOME, BottomNavItem.DYNAMIC),
                 bottomBarSearchEnabled = false
+            )
+        )
+    }
+
+    @Test
+    fun `compact bottom search mode keeps home as the only dock tab`() {
+        assertEquals(
+            listOf(BottomNavItem.HOME),
+            resolveBottomBarVisibleItemsForSearchMode(
+                visibleItems = listOf(
+                    BottomNavItem.HOME,
+                    BottomNavItem.DYNAMIC,
+                    BottomNavItem.HISTORY,
+                    BottomNavItem.PROFILE
+                ),
+                bottomBarSearchEnabled = true,
+                searchLayoutMode = BottomBarSearchLayoutMode.HOME_AND_SEARCH
             )
         )
     }
@@ -562,6 +597,28 @@ class BottomBarLayoutPolicyTest {
                 currentItem = BottomNavItem.HISTORY,
                 bottomBarSearchEnabled = true,
                 effectiveSearchExpanded = false
+            )
+        )
+    }
+
+    @Test
+    fun `compact search layout toggles expanded search from search tab click`() {
+        assertEquals(
+            BottomBarSearchExpansionOverride.EXPANDED,
+            resolveBottomBarSearchExpansionOverrideOnSearchClick(
+                currentItem = BottomNavItem.HOME,
+                bottomBarSearchEnabled = true,
+                effectiveSearchExpanded = false,
+                searchLayoutMode = BottomBarSearchLayoutMode.HOME_AND_SEARCH
+            )
+        )
+        assertEquals(
+            BottomBarSearchExpansionOverride.COLLAPSED,
+            resolveBottomBarSearchExpansionOverrideOnSearchClick(
+                currentItem = BottomNavItem.HOME,
+                bottomBarSearchEnabled = true,
+                effectiveSearchExpanded = true,
+                searchLayoutMode = BottomBarSearchLayoutMode.HOME_AND_SEARCH
             )
         )
     }
