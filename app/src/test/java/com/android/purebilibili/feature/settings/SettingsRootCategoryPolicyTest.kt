@@ -8,12 +8,10 @@ class SettingsRootCategoryPolicyTest {
     @Test
     fun `mobile and tablet settings share scene based root category order`() {
         val expected = listOf(
-            SettingsRootCategory.INTERFACE_HOME,
-            SettingsRootCategory.DYNAMIC_RECOMMEND,
-            SettingsRootCategory.PLAYBACK_INTERACTION,
-            SettingsRootCategory.NAVIGATION_GESTURE,
-            SettingsRootCategory.DATA_PRIVACY,
-            SettingsRootCategory.EXTENSION_ABOUT
+            SettingsRootCategory.APPEARANCE_INTERACTION,
+            SettingsRootCategory.CONTENT_PLAYBACK,
+            SettingsRootCategory.PRIVACY_STORAGE,
+            SettingsRootCategory.SYSTEM_ABOUT
         )
 
         assertEquals(expected, resolveSettingsRootCategoryOrder())
@@ -24,12 +22,10 @@ class SettingsRootCategoryPolicyTest {
     fun `scene based root categories expose user facing titles`() {
         assertEquals(
             listOf(
-                "界面与首页",
-                "动态与推荐",
-                "播放与互动",
-                "导航与手势",
-                "数据与隐私",
-                "扩展与关于"
+                "外观与交互",
+                "内容与播放",
+                "隐私与存储",
+                "系统与关于"
             ),
             resolveSettingsRootCategoryOrder().map { it.title }
         )
@@ -38,19 +34,19 @@ class SettingsRootCategoryPolicyTest {
     @Test
     fun `scene search targets map back to root categories`() {
         assertEquals(
-            SettingsRootCategory.DYNAMIC_RECOMMEND,
+            SettingsRootCategory.CONTENT_PLAYBACK,
             resolveSettingsRootCategoryForSearchTarget(SettingsSearchTarget.HOME_FEED)
         )
         assertEquals(
-            SettingsRootCategory.NAVIGATION_GESTURE,
+            SettingsRootCategory.APPEARANCE_INTERACTION,
             resolveSettingsRootCategoryForSearchTarget(SettingsSearchTarget.FULLSCREEN_GESTURE)
         )
         assertEquals(
-            SettingsRootCategory.EXTENSION_ABOUT,
+            SettingsRootCategory.SYSTEM_ABOUT,
             resolveSettingsRootCategoryForSearchTarget(SettingsSearchTarget.DIAGNOSTICS)
         )
         assertEquals(
-            SettingsRootCategory.EXTENSION_ABOUT,
+            SettingsRootCategory.SYSTEM_ABOUT,
             resolveSettingsRootCategoryForSearchTarget(SettingsSearchTarget.TELEGRAM)
         )
     }
@@ -58,8 +54,8 @@ class SettingsRootCategoryPolicyTest {
     @Test
     fun `root category name resolves back to category for mobile detail navigation`() {
         assertEquals(
-            SettingsRootCategory.INTERFACE_HOME,
-            resolveSettingsRootCategoryByName(SettingsRootCategory.INTERFACE_HOME.name)
+            SettingsRootCategory.APPEARANCE_INTERACTION,
+            resolveSettingsRootCategoryByName(SettingsRootCategory.APPEARANCE_INTERACTION.name)
         )
         assertEquals(null, resolveSettingsRootCategoryByName("UNKNOWN"))
     }

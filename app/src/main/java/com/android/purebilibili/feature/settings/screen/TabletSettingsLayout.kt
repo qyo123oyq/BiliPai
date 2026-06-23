@@ -122,7 +122,7 @@ fun TabletSettingsLayout(
     
     modifier: Modifier = Modifier
 ) {
-    var selectedCategory by remember { mutableStateOf(SettingsRootCategory.INTERFACE_HOME) }
+    var selectedCategory by remember { mutableStateOf(SettingsRootCategory.APPEARANCE_INTERACTION) }
     val coroutineScope = rememberCoroutineScope()
     var pendingLanguageRestart by remember { mutableStateOf<AppLanguage?>(null) }
     val uiPreset = com.android.purebilibili.core.theme.LocalUiPreset.current

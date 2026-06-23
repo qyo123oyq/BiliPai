@@ -92,9 +92,9 @@ class SettingsRootCategoryContentStructureTest {
         assertTrue(contentBlock.contains("SettingsDetailGroup("))
         assertTrue(contentBlock.contains("SettingsDetailEntrySection("))
         assertFalse(contentBlock.contains("SettingsSceneShortcutSection("))
-        assertTrue(contentBlock.contains("SettingsRootCategory.DYNAMIC_RECOMMEND -> {"))
-        assertTrue(contentBlock.contains("SettingsRootCategory.DATA_PRIVACY -> {"))
-        assertTrue(contentBlock.contains("SettingsRootCategory.EXTENSION_ABOUT -> {"))
+        assertTrue(contentBlock.contains("SettingsRootCategory.CONTENT_PLAYBACK -> {"))
+        assertTrue(contentBlock.contains("SettingsRootCategory.PRIVACY_STORAGE -> {"))
+        assertTrue(contentBlock.contains("SettingsRootCategory.SYSTEM_ABOUT -> {"))
     }
 
     @Test
@@ -174,7 +174,7 @@ class SettingsRootCategoryContentStructureTest {
         ).first { it.exists() }.readText()
 
         val aboutBlock = source
-            .substringAfter("SettingsRootCategory.EXTENSION_ABOUT -> {")
+            .substringAfter("SettingsRootCategory.SYSTEM_ABOUT -> {")
             .substringBefore("SupportToolsSection(")
 
         assertTrue(aboutBlock.indexOf("AboutSection(") < aboutBlock.indexOf("ReleaseChannelPinnedCard("))
