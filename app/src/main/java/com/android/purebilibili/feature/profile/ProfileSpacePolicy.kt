@@ -1,5 +1,7 @@
 package com.android.purebilibili.feature.profile
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import com.android.purebilibili.data.model.response.FavFolder
 import com.android.purebilibili.data.model.response.FollowBangumiItem
 import com.android.purebilibili.data.model.response.MemberAccountData
@@ -32,6 +34,17 @@ data class ProfileSpaceTabChromeSpec(
     val selectedIndicatorAlpha: Float,
     val selectedTextAlpha: Float,
     val unselectedTextAlpha: Float
+)
+
+data class ProfileSpaceWallpaperChromePalette(
+    val rowContainerColor: Color,
+    val controlContainerColor: Color,
+    val selectedTextColor: Color,
+    val unselectedTextColor: Color,
+    val indicatorColor: Color,
+    val serviceContainerColor: Color,
+    val serviceBorderColor: Color,
+    val serviceTextColor: Color
 )
 
 enum class ProfileSpaceHomeSection {
@@ -96,12 +109,43 @@ fun defaultProfileSpaceTabs(): List<ProfileSpaceTabItem> {
 
 fun resolveProfileSpaceTabChromeSpec(): ProfileSpaceTabChromeSpec {
     return ProfileSpaceTabChromeSpec(
-        rowContainerAlpha = 0.98f,
-        controlContainerAlpha = 0.96f,
-        selectedIndicatorAlpha = 0.14f,
+        rowContainerAlpha = 0.78f,
+        controlContainerAlpha = 0.82f,
+        selectedIndicatorAlpha = 0.18f,
         selectedTextAlpha = 1f,
-        unselectedTextAlpha = 0.72f
+        unselectedTextAlpha = 0.76f
     )
+}
+
+fun resolveProfileSpaceWallpaperChromePalette(
+    wallpaperColor: Color,
+    fallbackSurfaceColor: Color,
+    fallbackContentColor: Color
+): ProfileSpaceWallpaperChromePalette {
+    val source = if (wallpaperColor.alpha > 0f) wallpaperColor else fallbackSurfaceColor
+    val readableText = if (source.luminance() < 0.45f) Color.White else Color.Black
+    val chromeSpec = resolveProfileSpaceTabChromeSpec()
+    val serviceText = if (calculateProfileSpaceContrast(readableText, source) >= 4.5f) {
+        readableText
+    } else {
+        fallbackContentColor
+    }
+    return ProfileSpaceWallpaperChromePalette(
+        rowContainerColor = source.copy(alpha = chromeSpec.rowContainerAlpha),
+        controlContainerColor = source.copy(alpha = chromeSpec.controlContainerAlpha),
+        selectedTextColor = serviceText.copy(alpha = chromeSpec.selectedTextAlpha),
+        unselectedTextColor = serviceText.copy(alpha = chromeSpec.unselectedTextAlpha),
+        indicatorColor = serviceText.copy(alpha = chromeSpec.selectedIndicatorAlpha),
+        serviceContainerColor = source.copy(alpha = 0.68f),
+        serviceBorderColor = serviceText.copy(alpha = 0.16f),
+        serviceTextColor = serviceText
+    )
+}
+
+private fun calculateProfileSpaceContrast(foreground: Color, background: Color): Float {
+    val lighter = maxOf(foreground.luminance(), background.luminance())
+    val darker = minOf(foreground.luminance(), background.luminance())
+    return (lighter + 0.05f) / (darker + 0.05f)
 }
 
 fun resolveProfileSpaceHomeSections(

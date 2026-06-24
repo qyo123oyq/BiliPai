@@ -1,6 +1,7 @@
 package com.android.purebilibili.feature.profile
 
 import android.app.Activity
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.background
@@ -58,7 +59,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.imageLoader
 import coil.request.ImageRequest
+import coil.request.SuccessResult
 import coil.size.Scale
 import com.android.purebilibili.core.theme.iOSBlue
 import com.android.purebilibili.core.theme.iOSGreen
@@ -142,6 +145,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.unit.times
+import androidx.core.graphics.drawable.toBitmap
+import androidx.palette.graphics.Palette
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 internal fun shouldEnableProfileHeaderLoginClick(isLogin: Boolean): Boolean = !isLogin
 
@@ -875,6 +882,47 @@ private fun BoxScope.ProfileBackground(
     }
 }
 
+@Composable
+private fun rememberProfileWallpaperColor(wallpaperUrl: String): Color {
+    val context = LocalContext.current
+    val fallbackColor = MaterialTheme.colorScheme.surface
+    var color by remember(wallpaperUrl, fallbackColor) { mutableStateOf(fallbackColor) }
+
+    LaunchedEffect(wallpaperUrl, fallbackColor) {
+        color = fallbackColor
+        if (wallpaperUrl.isBlank()) return@LaunchedEffect
+        extractProfileWallpaperColor(context, wallpaperUrl)?.let { color = it }
+    }
+
+    return color
+}
+
+private suspend fun extractProfileWallpaperColor(
+    context: Context,
+    wallpaperUrl: String
+): Color? = withContext(Dispatchers.IO) {
+    runCatching {
+        val request = ImageRequest.Builder(context)
+            .data(wallpaperUrl)
+            .allowHardware(false)
+            .size(96, 96)
+            .build()
+        val result = context.imageLoader.execute(request) as? SuccessResult ?: return@runCatching null
+        val bitmap = result.drawable.toBitmap(width = 96, height = 96)
+        val palette = Palette.from(bitmap)
+            .maximumColorCount(8)
+            .generate()
+        val swatch = palette.dominantSwatch
+            ?: palette.vibrantSwatch
+            ?: palette.mutedSwatch
+            ?: palette.darkVibrantSwatch
+            ?: palette.lightVibrantSwatch
+            ?: palette.darkMutedSwatch
+            ?: palette.lightMutedSwatch
+        swatch?.rgb?.let(::Color)
+    }.getOrNull()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileSpaceContent(
@@ -999,6 +1047,21 @@ private fun ProfileSpaceContent(
     } else {
         MaterialTheme.colorScheme.surface.copy(alpha = collapsedFraction)
     }
+    val wallpaperUrl = user.topPhoto.ifBlank { user.face }
+    val wallpaperColor = rememberProfileWallpaperColor(wallpaperUrl)
+    val fallbackSurfaceColor = MaterialTheme.colorScheme.surface
+    val fallbackContentColor = MaterialTheme.colorScheme.onSurface
+    val wallpaperChromePalette = remember(
+        wallpaperColor,
+        fallbackSurfaceColor,
+        fallbackContentColor
+    ) {
+        resolveProfileSpaceWallpaperChromePalette(
+            wallpaperColor = wallpaperColor,
+            fallbackSurfaceColor = fallbackSurfaceColor,
+            fallbackContentColor = fallbackContentColor
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (isTablet) {
@@ -1034,7 +1097,8 @@ private fun ProfileSpaceContent(
                         onWatchLaterClick = onWatchLaterClick,
                         onInboxClick = onInboxClick,
                         onAccountManageClick = onAccountManageClick,
-                        onLogout = onLogout
+                        onLogout = onLogout,
+                        chromePalette = wallpaperChromePalette
                     )
                 }
                 ProfileSpaceFeedColumn(
@@ -1056,6 +1120,7 @@ private fun ProfileSpaceContent(
                     onAccountManageClick = onAccountManageClick,
                     onLogout = onLogout,
                     onDynamicDeleteClick = onDynamicDeleteClick,
+                    chromePalette = wallpaperChromePalette,
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(bottom = 48.dp)
                 )
@@ -1079,7 +1144,8 @@ private fun ProfileSpaceContent(
                 item {
                     ProfileSpaceTabs(
                         selectedTab = space.selectedTab,
-                        onTabSelected = onTabSelected
+                        onTabSelected = onTabSelected,
+                        chromePalette = wallpaperChromePalette
                     )
                 }
                 item {
@@ -1100,7 +1166,8 @@ private fun ProfileSpaceContent(
                         onInboxClick = onInboxClick,
                         onAccountManageClick = onAccountManageClick,
                         onLogout = onLogout,
-                        onDynamicDeleteClick = onDynamicDeleteClick
+                        onDynamicDeleteClick = onDynamicDeleteClick,
+                        chromePalette = wallpaperChromePalette
                     )
                 }
             }
@@ -1152,12 +1219,17 @@ private fun ProfileSpaceFeedColumn(
     onAccountManageClick: () -> Unit,
     onLogout: () -> Unit,
     onDynamicDeleteClick: (DynamicDeleteAction) -> Unit,
+    chromePalette: ProfileSpaceWallpaperChromePalette,
     modifier: Modifier,
     contentPadding: PaddingValues
 ) {
     LazyColumn(modifier = modifier.fillMaxHeight(), contentPadding = contentPadding) {
         item {
-            ProfileSpaceTabs(selectedTab = space.selectedTab, onTabSelected = onTabSelected)
+            ProfileSpaceTabs(
+                selectedTab = space.selectedTab,
+                onTabSelected = onTabSelected,
+                chromePalette = chromePalette
+            )
         }
         item {
             ProfileSpaceTabBody(
@@ -1177,7 +1249,8 @@ private fun ProfileSpaceFeedColumn(
                 onInboxClick = onInboxClick,
                 onAccountManageClick = onAccountManageClick,
                 onLogout = onLogout,
-                onDynamicDeleteClick = onDynamicDeleteClick
+                onDynamicDeleteClick = onDynamicDeleteClick,
+                chromePalette = chromePalette
             )
         }
     }
@@ -1465,18 +1538,17 @@ private fun ProfileSpaceStat(label: String, value: Int, color: Color, onClick: (
 }
 
 @Composable
-private fun ProfileSpaceTabs(selectedTab: ProfileSpaceMainTab, onTabSelected: (ProfileSpaceMainTab) -> Unit) {
+private fun ProfileSpaceTabs(
+    selectedTab: ProfileSpaceMainTab,
+    onTabSelected: (ProfileSpaceMainTab) -> Unit,
+    chromePalette: ProfileSpaceWallpaperChromePalette
+) {
     val tabs = remember { defaultProfileSpaceTabs() }
     val context = LocalContext.current
     val bottomBarLiquidGlassEnabled by SettingsManager
         .getBottomBarLiquidGlassEnabled(context)
         .collectAsStateWithLifecycle(initialValue = true)
     val selectedIndex = tabs.indexOfFirst { it.tab == selectedTab }.coerceAtLeast(0)
-    val chromeSpec = remember { resolveProfileSpaceTabChromeSpec() }
-    val tabRowContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = chromeSpec.rowContainerAlpha)
-    val tabControlContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = chromeSpec.controlContainerAlpha)
-    val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = chromeSpec.selectedTextAlpha)
-    val unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = chromeSpec.unselectedTextAlpha)
     if (bottomBarLiquidGlassEnabled) {
         BottomBarLiquidSegmentedControl(
             items = tabs.map { it.title },
@@ -1484,16 +1556,16 @@ private fun ProfileSpaceTabs(selectedTab: ProfileSpaceMainTab, onTabSelected: (P
             onSelected = { index -> tabs.getOrNull(index)?.let { onTabSelected(it.tab) } },
             modifier = Modifier
                 .fillMaxWidth()
-                .background(tabRowContainerColor)
+                .background(chromePalette.rowContainerColor)
                 .padding(horizontal = 18.dp, vertical = 8.dp),
             height = 46.dp,
             indicatorHeight = 40.dp,
             labelFontSize = 16.sp,
             forceLiquidChrome = true,
-            containerColorOverride = tabControlContainerColor,
-            selectedTextColorOverride = selectedColor,
-            unselectedTextColorOverride = unselectedColor,
-            indicatorIdleSurfaceColorOverride = MaterialTheme.colorScheme.primary.copy(alpha = chromeSpec.selectedIndicatorAlpha)
+            containerColorOverride = chromePalette.controlContainerColor,
+            selectedTextColorOverride = chromePalette.selectedTextColor,
+            unselectedTextColorOverride = chromePalette.unselectedTextColor,
+            indicatorIdleSurfaceColorOverride = chromePalette.indicatorColor
         )
         return
     }
@@ -1501,7 +1573,7 @@ private fun ProfileSpaceTabs(selectedTab: ProfileSpaceMainTab, onTabSelected: (P
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(tabRowContainerColor)
+            .background(chromePalette.rowContainerColor)
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(28.dp)
@@ -1518,7 +1590,7 @@ private fun ProfileSpaceTabs(selectedTab: ProfileSpaceMainTab, onTabSelected: (P
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = if (selected) selectedColor else unselectedColor,
+                    color = if (selected) chromePalette.selectedTextColor else chromePalette.unselectedTextColor,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(6.dp))
@@ -1527,7 +1599,7 @@ private fun ProfileSpaceTabs(selectedTab: ProfileSpaceMainTab, onTabSelected: (P
                         .width(28.dp)
                         .height(3.dp)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(if (selected) selectedColor else Color.Transparent)
+                        .background(if (selected) chromePalette.selectedTextColor else Color.Transparent)
                 )
             }
         }
@@ -1552,7 +1624,8 @@ private fun ProfileSpaceTabBody(
     onInboxClick: () -> Unit,
     onAccountManageClick: () -> Unit,
     onLogout: () -> Unit,
-    onDynamicDeleteClick: (DynamicDeleteAction) -> Unit
+    onDynamicDeleteClick: (DynamicDeleteAction) -> Unit,
+    chromePalette: ProfileSpaceWallpaperChromePalette
 ) {
     when (space.selectedTab) {
         ProfileSpaceMainTab.HOME -> ProfileSpaceHome(
@@ -1571,7 +1644,8 @@ private fun ProfileSpaceTabBody(
             onWatchLaterClick = onWatchLaterClick,
             onInboxClick = onInboxClick,
             onAccountManageClick = onAccountManageClick,
-            onLogout = onLogout
+            onLogout = onLogout,
+            chromePalette = chromePalette
         )
         ProfileSpaceMainTab.DYNAMIC -> ProfileDynamicList(
             items = space.dynamicItems,
@@ -1601,7 +1675,8 @@ private fun ProfileSpaceHome(
     onWatchLaterClick: () -> Unit,
     onInboxClick: () -> Unit,
     onAccountManageClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    chromePalette: ProfileSpaceWallpaperChromePalette
 ) {
     Column(
         modifier = Modifier.padding(top = 10.dp, bottom = 24.dp),
@@ -1642,7 +1717,8 @@ private fun ProfileSpaceHome(
                         onWatchLaterClick = onWatchLaterClick,
                         onInboxClick = onInboxClick,
                         onAccountManageClick = onAccountManageClick,
-                        onLogout = onLogout
+                        onLogout = onLogout,
+                        chromePalette = chromePalette
                     )
                 }
             }
@@ -1661,13 +1737,14 @@ private fun ProfileSpaceServices(
     onWatchLaterClick: () -> Unit,
     onInboxClick: () -> Unit,
     onAccountManageClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    chromePalette: ProfileSpaceWallpaperChromePalette
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = "我的服务",
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = chromePalette.serviceTextColor,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
@@ -1683,8 +1760,9 @@ private fun ProfileSpaceServices(
             onInboxClick = onInboxClick,
             onAccountManageClick = onAccountManageClick,
             onLogout = onLogout,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
+            containerColor = chromePalette.serviceContainerColor,
+            contentColor = chromePalette.serviceTextColor,
+            borderColor = chromePalette.serviceBorderColor,
             isLogin = true
         )
     }

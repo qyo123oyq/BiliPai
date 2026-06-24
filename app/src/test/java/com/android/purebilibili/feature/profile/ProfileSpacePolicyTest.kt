@@ -1,5 +1,6 @@
 package com.android.purebilibili.feature.profile
 
+import androidx.compose.ui.graphics.Color
 import com.android.purebilibili.data.model.response.FavFolder
 import com.android.purebilibili.data.model.response.FollowBangumiItem
 import com.android.purebilibili.data.model.response.DynamicMoreModule
@@ -446,10 +447,29 @@ class ProfileSpacePolicyTest {
     fun `tab chrome stays readable over custom wallpaper`() {
         val spec = resolveProfileSpaceTabChromeSpec()
 
-        assertTrue(spec.rowContainerAlpha >= 0.95f)
-        assertTrue(spec.controlContainerAlpha >= 0.9f)
+        assertTrue(spec.rowContainerAlpha in 0.65f..0.85f)
+        assertTrue(spec.controlContainerAlpha in 0.75f..0.9f)
         assertTrue(spec.selectedTextAlpha >= 0.95f)
         assertTrue(spec.unselectedTextAlpha >= 0.65f)
-        assertTrue(spec.selectedIndicatorAlpha in 0.1f..0.2f)
+        assertTrue(spec.selectedIndicatorAlpha in 0.12f..0.22f)
+    }
+
+    @Test
+    fun `wallpaper chrome palette picks readable text from wallpaper color`() {
+        val darkPalette = resolveProfileSpaceWallpaperChromePalette(
+            wallpaperColor = Color(0xFF6E1515),
+            fallbackSurfaceColor = Color.White,
+            fallbackContentColor = Color.Black
+        )
+        val lightPalette = resolveProfileSpaceWallpaperChromePalette(
+            wallpaperColor = Color(0xFFEADBC5),
+            fallbackSurfaceColor = Color.White,
+            fallbackContentColor = Color.Black
+        )
+
+        assertEquals(Color.White, darkPalette.serviceTextColor)
+        assertEquals(Color.Black, lightPalette.serviceTextColor)
+        assertTrue(darkPalette.serviceContainerColor.alpha < 0.75f)
+        assertTrue(lightPalette.rowContainerColor.alpha < 0.85f)
     }
 }
