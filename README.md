@@ -23,6 +23,9 @@
   <a href="https://github.com/jay3-yy/BiliPai/releases">
     <img src="https://img.shields.io/github/downloads/jay3-yy/BiliPai/total?style=flat-square&color=34C759&label=%E6%80%BB%E4%B8%8B%E8%BD%BD%E9%87%8F&labelColor=ffffff" alt="总下载量" />
   </a>
+  <a href="https://github.com/jay3-yy/BiliPai/releases/tag/v9.6.0">
+    <img src="https://img.shields.io/github/downloads/jay3-yy/BiliPai/v9.6.0/total?style=flat-square&color=5AC8FA&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC%E4%B8%8B%E8%BD%BD%E9%87%8F&labelColor=ffffff" alt="最新版本下载量" />
+  </a>
 </p>
 
 <p>
