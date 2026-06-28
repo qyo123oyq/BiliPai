@@ -1041,8 +1041,12 @@ private fun LightweightHomeTopTabs(
         val topTabCaptureLensSpec = resolveBottomBarBackdropPresetCaptureLens(
             progress = topTabBackdropPresetProgress.captureProgress
         )
+        val topTabEffectiveIndicatorProgress = maxOf(
+            topTabBackdropPresetProgress.indicatorProgress,
+            topTabPressProgress
+        )
         val topTabIndicatorLensSpec = resolveBottomBarBackdropPresetIndicatorLens(
-            progress = topTabPressProgress
+            progress = topTabEffectiveIndicatorProgress
         )
         val topTabIndicatorHighlightAlpha = resolveBottomBarLiquidGlassHighlightAlpha(
             motionProgress = topTabBackdropPresetProgress.indicatorProgress
@@ -1170,6 +1174,11 @@ private fun LightweightHomeTopTabs(
             themeColor = topTabThemeColor,
             darkTheme = isDarkTheme
         )
+        val topTabCaptureSurfaceColor = if (hasOuterChromeSurface) {
+            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
+        } else {
+            Color.Transparent
+        }
         val usesMeasuredCapsuleAlignment = shouldUseMovingIosCapsule || shouldUseMd3DockBackedCapsule
         val measuredSelectedItemLeftPx by remember(usesMeasuredCapsuleAlignment) {
             derivedStateOf {
@@ -1269,7 +1278,6 @@ private fun LightweightHomeTopTabs(
             ) {
                 if (shouldRenderTopTabIndicatorContentCapture && miuixBackdrop != null) {
                     TopTabIndicatorExportCaptureLayer(
-                        listState = listState,
                         categories = categories,
                         categoryKeys = categoryKeys,
                         effectiveRenderer = effectiveRenderer,
@@ -1291,11 +1299,14 @@ private fun LightweightHomeTopTabs(
                         } else {
                             md3ContentPadding
                         },
+                        rowScrollOffsetPx = rowScrollOffsetPx,
                         topTabContentBackdrop = topTabContentBackdrop,
                         miuixBackdrop = miuixBackdrop,
                         captureLensSpec = topTabCaptureLensSpec,
+                        captureSurfaceColor = topTabCaptureSurfaceColor,
                         panelOffsetPx = topTabPanelOffsetPx,
-                        exportTintColor = topTabExportTintColor
+                        exportTintColor = topTabExportTintColor,
+                        isPressActive = topTabPressProgress > 0.001f
                     )
                 }
                 LazyRow(
@@ -1604,7 +1615,6 @@ private fun LightweightHomeTopTabs(
 
 @Composable
 private fun TopTabIndicatorExportCaptureLayer(
-    listState: androidx.compose.foundation.lazy.LazyListState,
     categories: List<String>,
     categoryKeys: List<String>,
     effectiveRenderer: HomeTopTabRenderer,
@@ -1622,11 +1632,14 @@ private fun TopTabIndicatorExportCaptureLayer(
     topTabSkinIconPaths: Map<String, TopTabSkinIconPaths>,
     hasSkinStickerIcons: Boolean,
     contentPadding: Dp,
+    rowScrollOffsetPx: Float,
     topTabContentBackdrop: MiuixLayerBackdrop,
     miuixBackdrop: MiuixBackdrop,
     captureLensSpec: BottomBarBackdropPresetLensSpec,
+    captureSurfaceColor: Color,
     panelOffsetPx: Float,
-    exportTintColor: Color
+    exportTintColor: Color,
+    isPressActive: Boolean
 ) {
     Box(
         modifier = Modifier
@@ -1642,7 +1655,9 @@ private fun TopTabIndicatorExportCaptureLayer(
                 effects = {
                     if (shouldUseBottomBarCaptureLens(liquidGlassEnabled)) {
                         miuixVibrancy()
-                        miuixBlur(4.dp.toPx(), 4.dp.toPx())
+                    }
+                    miuixBlur(4.dp.toPx(), 4.dp.toPx())
+                    if (shouldUseBottomBarCaptureLens(liquidGlassEnabled)) {
                         miuixLens(
                             refractionHeight = captureLensSpec.refractionHeightDp.dp.toPx(),
                             refractionAmount = captureLensSpec.refractionAmountDp.dp.toPx()
@@ -1650,24 +1665,34 @@ private fun TopTabIndicatorExportCaptureLayer(
                     }
                 },
                 onDrawSurface = {
-                    drawRect(Color.Transparent)
+                    drawRect(captureSurfaceColor)
                 }
             )
-            .graphicsLayer(colorFilter = ColorFilter.tint(exportTintColor))
     ) {
-        LazyRow(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    translationX = -rowScrollOffsetPx
+                    colorFilter = ColorFilter.tint(exportTintColor)
+                }
+                .padding(horizontal = contentPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
-            contentPadding = PaddingValues(horizontal = contentPadding)
+            horizontalArrangement = Arrangement.Start
         ) {
-            itemsIndexed(
-                items = categories,
-                key = { index, category -> categoryKeys.getOrNull(index) ?: category }
-            ) { index, category ->
+            categories.forEachIndexed { index, category ->
                 val categoryKey = categoryKeys.getOrNull(index) ?: category
-                val selectionFraction = (1f - abs(indicatorPosition - index.toFloat())).coerceIn(0f, 1f)
+                val coverage = resolveBottomBarItemCoverage(
+                    itemIndex = index,
+                    indicatorPosition = indicatorPosition,
+                    currentSelectedIndex = selectedIndex,
+                    motionProgress = motionProgress
+                )
+                val selectionFraction = if (isPressActive) {
+                    coverage
+                } else {
+                    (1f - abs(indicatorPosition - index.toFloat())).coerceIn(0f, 1f)
+                }
                 LightweightTopTabItem(
                     renderer = effectiveRenderer,
                     category = category,
@@ -1689,6 +1714,7 @@ private fun TopTabIndicatorExportCaptureLayer(
                     skinIconPaths = topTabSkinIconPaths[categoryKey.trim().uppercase()],
                     hasSkinStickerIcon = hasSkinStickerIcons,
                     isExportLayer = true,
+                    exportPressActive = isPressActive,
                     useClickIndication = false,
                     onClick = {}
                 )
@@ -1719,6 +1745,7 @@ private fun LightweightTopTabItem(
     skinIconPaths: TopTabSkinIconPaths? = null,
     hasSkinStickerIcon: Boolean = false,
     isExportLayer: Boolean = false,
+    exportPressActive: Boolean = false,
     useClickIndication: Boolean = true,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
@@ -1760,12 +1787,16 @@ private fun LightweightTopTabItem(
             selectionEmphasis = selectionEmphasis
         )
         if (isExportLayer) {
-            resolveBottomBarGlassExportContentColor(
-                unselectedColor = unselectedColor,
-                selectedColor = selectedColor,
-                themeWeight = motionVisual.themeWeight,
-                glassEnabled = true
-            )
+            if (exportPressActive) {
+                selectedColor
+            } else {
+                resolveBottomBarGlassExportContentColor(
+                    unselectedColor = unselectedColor,
+                    selectedColor = selectedColor,
+                    themeWeight = motionVisual.themeWeight,
+                    glassEnabled = true
+                )
+            }
         } else {
             resolveBottomBarGlassVisibleContentColor(
                 unselectedColor = unselectedColor,

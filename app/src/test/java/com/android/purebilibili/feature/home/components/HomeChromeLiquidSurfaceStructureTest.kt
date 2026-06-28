@@ -174,7 +174,7 @@ class HomeChromeLiquidSurfaceStructureTest {
                 topBarSource.contains("backdrop = miuixBackdrop") &&
                 topBarSource.contains("indicatorZIndex = 0f") &&
                 topBarSource.contains("TopTabIndicatorExportCaptureLayer(") &&
-                topBarSource.contains("ColorFilter.tint(exportTintColor)") &&
+                topBarSource.contains("colorFilter = ColorFilter.tint(exportTintColor)") &&
                 topBarSource.contains("shouldRenderBottomBarIndicatorBackdrop(") &&
                 topBarSource.contains("allowIdleGlassEffect = false") &&
                 topBarSource.contains("contentBackdrop = effectiveTopTabIndicatorContentBackdrop") &&

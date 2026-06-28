@@ -395,9 +395,11 @@ class TopTabRefractionPolicyTest {
         assertTrue(source.contains("backdrop = miuixBackdrop"))
         assertTrue(source.contains("shouldRenderTopTabIndicatorContentCapture("))
         assertTrue(source.contains("TopTabIndicatorExportCaptureLayer("))
-        assertTrue(source.contains("ColorFilter.tint(exportTintColor)"))
+        assertTrue(source.contains("colorFilter = ColorFilter.tint(exportTintColor)"))
         assertTrue(source.contains("resolveBottomBarBackdropPresetCaptureLens("))
-        assertTrue(source.contains("progress = topTabPressProgress"))
+        assertTrue(source.contains("topTabEffectiveIndicatorProgress"))
+        assertTrue(source.contains("rowScrollOffsetPx = rowScrollOffsetPx"))
+        assertFalse(source.contains("listState = listState"))
         assertFalse(source.contains("if (shouldPrimeTopTabLiquidGlassCapture) {\n                                miuixLayerBackdrop(topTabContentBackdrop)"))
     }
 
