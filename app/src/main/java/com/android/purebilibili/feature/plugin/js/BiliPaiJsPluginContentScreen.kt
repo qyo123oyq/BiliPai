@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.purebilibili.core.plugin.js.BiliPaiJsMediaItem
 import com.android.purebilibili.core.plugin.js.BiliPaiJsModule
+import com.android.purebilibili.core.plugin.js.BiliPaiJsParam
 import com.android.purebilibili.core.plugin.js.BiliPaiJsPluginInstallStore
 import com.android.purebilibili.core.plugin.js.BiliPaiJsRuntime
 import com.android.purebilibili.core.plugin.js.ExternalMediaLaunchStore
@@ -72,7 +73,17 @@ fun BiliPaiJsPluginContentScreen(
     var selectedModule by remember(installed) {
         mutableStateOf(installed?.manifest?.modules?.firstOrNull())
     }
-    val paramValues = remember(selectedModule) { mutableStateMapOf<String, String>() }
+    val paramValues = remember(pluginId, selectedModule) {
+        mutableStateMapOf<String, String>().apply {
+            val module = selectedModule ?: return@apply
+            putAll(
+                resolveBiliPaiJsInitialParamValues(
+                    params = module.params,
+                    savedValues = readBiliPaiJsParamValues(context, pluginId, module)
+                )
+            )
+        }
+    }
     var items by remember { mutableStateOf<List<BiliPaiJsMediaItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -80,6 +91,7 @@ fun BiliPaiJsPluginContentScreen(
     fun loadModule(module: BiliPaiJsModule) {
         val current = installed ?: return
         selectedModule = module
+        persistBiliPaiJsParamValues(context, current.manifest.id, module, paramValues)
         isLoading = true
         errorMessage = null
         scope.launch {
@@ -249,6 +261,8 @@ private fun BiliPaiJsMediaItemRow(
     onPlay: () -> Unit
 ) {
     val streams = remember(item) { resolveBiliPaiJsMediaStreams(item) }
+    val imageUrl = item.coverUrl ?: item.backdropUrl
+    var imageLoadFailed by remember(imageUrl) { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -261,14 +275,22 @@ private fun BiliPaiJsMediaItemRow(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = item.coverUrl ?: item.backdropUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(width = 96.dp, height = 56.dp)
-                    .clip(RoundedCornerShape(6.dp)),
-                contentScale = ContentScale.Crop
-            )
+            if (imageUrl.isNullOrBlank() || imageLoadFailed) {
+                PluginMediaImagePlaceholder(
+                    title = item.title,
+                    modifier = Modifier.size(width = 96.dp, height = 56.dp)
+                )
+            } else {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(width = 96.dp, height = 56.dp)
+                        .clip(RoundedCornerShape(6.dp)),
+                    contentScale = ContentScale.Crop,
+                    onError = { imageLoadFailed = true }
+                )
+            }
             Spacer(modifier = Modifier.size(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -306,6 +328,33 @@ private fun BiliPaiJsMediaItemRow(
 }
 
 @Composable
+private fun PluginMediaImagePlaceholder(title: String) {
+    PluginMediaImagePlaceholder(title = title, modifier = Modifier)
+}
+
+@Composable
+private fun PluginMediaImagePlaceholder(
+    title: String,
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+        ) {}
+        Text(
+            text = title.take(2).ifBlank { "TV" },
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
 private fun EmptyState(
     modifier: Modifier,
     text: String
@@ -328,6 +377,58 @@ private fun buildParamsJson(
             put(param.name, JsonPrimitive(values[param.name] ?: param.defaultValue))
         }
     }.toString()
+}
+
+internal fun resolveBiliPaiJsInitialParamValues(
+    params: List<BiliPaiJsParam>,
+    savedValues: Map<String, String>
+): Map<String, String> {
+    return params.associate { param ->
+        param.name to (savedValues[param.name] ?: param.defaultValue)
+    }
+}
+
+internal fun buildBiliPaiJsParamPreferenceKey(
+    pluginId: String,
+    moduleId: String,
+    paramName: String
+): String {
+    return "js_param_${safePreferencePart(pluginId)}_${safePreferencePart(moduleId)}_${safePreferencePart(paramName)}"
+}
+
+private fun readBiliPaiJsParamValues(
+    context: android.content.Context,
+    pluginId: String,
+    module: BiliPaiJsModule
+): Map<String, String> {
+    val prefs = context.getSharedPreferences("bilipai_js_plugin_params", android.content.Context.MODE_PRIVATE)
+    val moduleId = module.id.ifBlank { module.functionName }
+    return module.params.associate { param ->
+        val key = buildBiliPaiJsParamPreferenceKey(pluginId, moduleId, param.name)
+        param.name to prefs.getString(key, param.defaultValue).orEmpty()
+    }
+}
+
+private fun persistBiliPaiJsParamValues(
+    context: android.content.Context,
+    pluginId: String,
+    module: BiliPaiJsModule,
+    values: Map<String, String>
+) {
+    val prefs = context.getSharedPreferences("bilipai_js_plugin_params", android.content.Context.MODE_PRIVATE)
+    val moduleId = module.id.ifBlank { module.functionName }
+    prefs.edit().apply {
+        module.params.forEach { param ->
+            putString(
+                buildBiliPaiJsParamPreferenceKey(pluginId, moduleId, param.name),
+                values[param.name] ?: param.defaultValue
+            )
+        }
+    }.apply()
+}
+
+private fun safePreferencePart(value: String): String {
+    return value.replace(Regex("[^A-Za-z0-9_.-]"), "_")
 }
 
 private fun flattenMediaItems(items: List<BiliPaiJsMediaItem>): List<BiliPaiJsMediaItem> {
