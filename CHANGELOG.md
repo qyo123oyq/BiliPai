@@ -1,5 +1,34 @@
 # Changelog
 
+## v9.8.6 (2026-06-30)
+
+### 版本信息
+- 版本号从 `9.8.5` 升级到 `9.8.6`，`versionCode` 从 `244` 升级到 `245`。
+
+### 更新内容
+
+#### 预测返回手势视觉连续性与稳定性修复
+- **退出平移与手势位置连续**：`BiliPaiScalePredictiveBackAnimation` 提交退出时，`exitAnimatable` 从手势进度 snap 开始再 animateTo，消除手势中只有缩放、松手后平移从 0 突破的断裂感。
+- **目标页遮罩平滑渐入**：Scale 风格预测返回的黑色覆盖层改用 `gestureProgress` 线性驱动（0→0.5），替代 `inPredictiveBackAnimation` 阶跃跳变。
+- **AOSP 退出页面淡化**：`BiliPaiAospCrossActivityPredictiveBackAnimation` 退出页 alpha 移除 `linearProgress≥0.2` 硬截断，改为 `1 - progress` 全程线性渐变。
+- **中断进入无闪烁**：快速返回手势在页面入场未完成时触发，不再因 decorator 早期返回而导致 1 帧视觉跳跃。
+
+#### 预测返回状态一致性
+- **`exitingPageKey` 改为 reactive state**：消除快速连续返回手势时的状态覆盖。
+- **AOSP 异步 snapTo 竞争修复**：移除 `onPagePop` 中的 `animationScope.launch`，消除 `exitAnimatable` 悬空在 1f 的时间窗口。
+
+#### 共享元素与预测返回方向对齐
+- **共享元素模式滑动跟随手势**：`BiliPaiNavDisplayHost` 在 `NO_OP_SHARED_ELEMENT` 时强制 `FOLLOW_GESTURE`，避免共享元素封面几何插值方向与背景页面滑动方向冲突。
+- **`onPredictivePopTransitionSpec` 加入专属缓动曲线**：slideOut/In 使用 `tween(220ms)` + `EmphasizedExit/EmphasizedEnter`，与导航过渡曲线族一致。
+
+#### 页面过渡对称性
+- **禁用共享元素时返回方向加 fadeOut**：`disabledVideoDirectionReturnTransform` 在 `slideOut` 上叠加 `fadeOut`，与前向 `slideIn+fadeIn` 对称。
+
+#### 代码重构
+- **提取重复函数**：`resolveCardDisabledReturnTransition` 统一为单点定义，消除两处字节完全一致的副本。
+
+---
+
 ## v9.8.0 (2026-06-29)
 
 ### 版本信息
