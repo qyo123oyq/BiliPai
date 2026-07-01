@@ -355,6 +355,43 @@ class BottomBarLiquidSegmentedControlStructureTest {
     }
 
     @Test
+    fun `slide press progress keeps liquid glass alive during drag and pager follow`() {
+        assertEquals(
+            0.8f,
+            resolveSegmentedControlSlidePressProgress(
+                pressProgress = 0f,
+                indicatorPosition = 0.4f,
+                tapPressRefractionEnabled = false,
+                isDragging = false,
+                pagerLinked = true,
+                pagerIsScrolling = true,
+            )
+        )
+        assertEquals(
+            1f,
+            resolveSegmentedControlSlidePressProgress(
+                pressProgress = 0.2f,
+                indicatorPosition = 0.5f,
+                tapPressRefractionEnabled = false,
+                isDragging = true,
+                pagerLinked = false,
+                pagerIsScrolling = false,
+            )
+        )
+        assertEquals(
+            0f,
+            resolveSegmentedControlSlidePressProgress(
+                pressProgress = 0.8f,
+                indicatorPosition = 0f,
+                tapPressRefractionEnabled = false,
+                isDragging = false,
+                pagerLinked = false,
+                pagerIsScrolling = false,
+            )
+        )
+    }
+
+    @Test
     fun `segmented control follows pager position with liquid indicator deformation`() {
         assertEquals(
             0.4f,

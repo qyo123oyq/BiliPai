@@ -103,7 +103,7 @@ class VideoContentTabBarPolicyTest {
     }
 
     @Test
-    fun `info comment tab bar disables tab row drag so pager swipe stays smooth`() {
+    fun `info comment tab bar keeps tab row drag enabled for indicator swipe switching`() {
         val source = loadSource(
             "app/src/main/java/com/android/purebilibili/feature/video/screen/VideoContentSection.kt"
         )
@@ -111,7 +111,7 @@ class VideoContentTabBarPolicyTest {
             .substringAfter("fun VideoContentTabBar(")
             .substringBefore("// [新增] 恢复画面按钮")
 
-        assertTrue(tabBarBlock.contains("dragSelectionEnabled = false"))
+        assertFalse(tabBarBlock.contains("dragSelectionEnabled = false"))
     }
 
     @Test

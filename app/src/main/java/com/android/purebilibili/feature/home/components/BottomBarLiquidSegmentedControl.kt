@@ -229,6 +229,27 @@ internal fun resolveSegmentedControlPagerLinked(
     pagerIndicatorPosition: Float?,
 ): Boolean = pagerIndicatorPosition != null
 
+internal fun resolveSegmentedControlFractionalSlideProgress(
+    indicatorPosition: Float,
+): Float = (abs(indicatorPosition - indicatorPosition.roundToInt()) * 2f).coerceIn(0f, 1f)
+
+internal fun resolveSegmentedControlSlidePressProgress(
+    pressProgress: Float,
+    indicatorPosition: Float,
+    tapPressRefractionEnabled: Boolean,
+    isDragging: Boolean,
+    pagerLinked: Boolean,
+    pagerIsScrolling: Boolean,
+): Float {
+    val fractionalProgress = resolveSegmentedControlFractionalSlideProgress(indicatorPosition)
+    return when {
+        isDragging -> maxOf(pressProgress, fractionalProgress)
+        pagerLinked && pagerIsScrolling -> fractionalProgress
+        tapPressRefractionEnabled -> pressProgress
+        else -> 0f
+    }
+}
+
 @Composable
 internal fun BottomBarLiquidIndicatorSurface(
     modifier: Modifier = Modifier,
@@ -627,9 +648,18 @@ fun BottomBarLiquidSegmentedControl(
         val pressMotionProgress by remember {
             derivedStateOf { dragState.pressProgress }
         }
+        val slidePressProgress = resolveSegmentedControlSlidePressProgress(
+            pressProgress = pressMotionProgress,
+            indicatorPosition = indicatorPosition,
+            tapPressRefractionEnabled = tapPressRefractionEnabled,
+            isDragging = dragState.isDragging,
+            pagerLinked = pagerLinked,
+            pagerIsScrolling = pagerIsScrolling,
+        )
         val indicatorIsInteracting = dragState.isDragging ||
             dragState.isRunning ||
-            (tapPressRefractionEnabled && pressMotionProgress > 0.001f)
+            (pagerLinked && pagerIsScrolling) ||
+            slidePressProgress > 0.001f
         val shouldStretchIndicator = dragState.isDragging ||
             shouldDeformTopTabIndicator(
                 position = indicatorPosition,
@@ -647,23 +677,22 @@ fun BottomBarLiquidSegmentedControl(
             isDragging = indicatorIsInteracting,
             motionSpec = motionSpec
         )
-        val motionProgress = resolveSegmentedControlMotionProgress(
-            pressProgress = pressMotionProgress,
-            refractionProgress = refractionMotionProfile.progress,
-            tapPressRefractionEnabled = tapPressRefractionEnabled
+        val motionProgress = maxOf(
+            slidePressProgress,
+            refractionMotionProfile.progress,
         )
-        val tapPressProgress = if (tapPressRefractionEnabled) pressMotionProgress else 0f
         val effectiveIndicatorPressProgress = resolveSegmentedControlIndicatorPressProgress(
-            tapPressProgress = tapPressProgress,
+            tapPressProgress = slidePressProgress,
             motionProgress = motionProgress,
             pagerInteractionProgress = 0f,
         )
         val indicatorDragScaleProgress = rememberBottomBarIndicatorDragScaleProgress(
-            isDragging = dragState.isDragging
+            isDragging = dragState.isDragging ||
+                (pagerLinked && pagerIsScrolling && slidePressProgress > 0.02f)
         )
         val indicatorLayerScaleProgress = maxOf(
             indicatorDragScaleProgress,
-            tapPressProgress,
+            slidePressProgress,
         )
         val indicatorLayerScaleTransform = BottomBarIndicatorLayerTransform(
             scaleX = dragState.scaleX,
@@ -685,7 +714,7 @@ fun BottomBarLiquidSegmentedControl(
         val backdropPresetProgress = resolveBottomBarBackdropPresetProgress(
             motionProgress = motionProgress,
             verticalProgress = 0f,
-            pressProgress = tapPressProgress
+            pressProgress = slidePressProgress
         )
         val captureLensSpec = resolveBottomBarBackdropPresetCaptureLens(
             progress = backdropPresetProgress.captureProgress
@@ -701,7 +730,7 @@ fun BottomBarLiquidSegmentedControl(
         )
         val indicatorGlowAlpha = resolveBottomBarIndicatorGlowAlpha(
             glassEnabled = liquidGlassEnabled,
-            pressProgress = tapPressProgress,
+            pressProgress = slidePressProgress,
             motionProgress = motionProgress
         )
 
