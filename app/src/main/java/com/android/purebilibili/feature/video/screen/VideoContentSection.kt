@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -70,6 +71,7 @@ import com.android.purebilibili.data.model.response.VideoTag
 import com.android.purebilibili.data.model.response.ViewInfo
 import com.android.purebilibili.data.model.response.BgmInfo
 import com.android.purebilibili.feature.common.resolveIndexedVideoLazyKey
+import com.android.purebilibili.feature.home.components.BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_HEIGHT_DP
 import com.android.purebilibili.feature.home.components.BottomBarLiquidSegmentedControl
 import com.android.purebilibili.feature.home.components.resolveTopTabPagerPosition
 import com.android.purebilibili.feature.video.ui.section.VideoTitleWithDesc
@@ -132,6 +134,49 @@ internal fun hasVideoContentTabBarIndicatorScaleClearance(
 ): Boolean {
     val bottomBarScale = 78f / 56f
     return containerHeightDp >= indicatorHeightDp * bottomBarScale + 2f
+}
+
+internal const val VIDEO_CONTENT_LIQUID_DOCK_INDICATOR_HEIGHT_DP = 54
+
+internal data class VideoContentTabBarLiquidChromeSpec(
+    val reusesLiquidGlassDock: Boolean,
+    val segmentedControlHeightDp: Int,
+    val segmentedControlIndicatorHeightDp: Int,
+    val liquidGlassEffectsEnabled: Boolean,
+    val useTransparentTabRowBackground: Boolean,
+)
+
+internal fun shouldReuseVideoContentTabBarLiquidGlassDock(
+    androidNativeLiquidGlassEnabled: Boolean,
+    hasBackdrop: Boolean,
+): Boolean = androidNativeLiquidGlassEnabled && hasBackdrop
+
+internal fun resolveVideoContentTabBarLiquidChromeSpec(
+    androidNativeLiquidGlassEnabled: Boolean,
+    hasBackdrop: Boolean,
+    layoutSpec: VideoContentTabBarLayoutSpec,
+): VideoContentTabBarLiquidChromeSpec {
+    val reusesLiquidGlassDock = shouldReuseVideoContentTabBarLiquidGlassDock(
+        androidNativeLiquidGlassEnabled = androidNativeLiquidGlassEnabled,
+        hasBackdrop = hasBackdrop,
+    )
+    return if (reusesLiquidGlassDock) {
+        VideoContentTabBarLiquidChromeSpec(
+            reusesLiquidGlassDock = true,
+            segmentedControlHeightDp = BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_HEIGHT_DP,
+            segmentedControlIndicatorHeightDp = VIDEO_CONTENT_LIQUID_DOCK_INDICATOR_HEIGHT_DP,
+            liquidGlassEffectsEnabled = true,
+            useTransparentTabRowBackground = true,
+        )
+    } else {
+        VideoContentTabBarLiquidChromeSpec(
+            reusesLiquidGlassDock = false,
+            segmentedControlHeightDp = layoutSpec.segmentedControlHeightDp,
+            segmentedControlIndicatorHeightDp = layoutSpec.segmentedControlIndicatorHeightDp,
+            liquidGlassEffectsEnabled = hasBackdrop,
+            useTransparentTabRowBackground = false,
+        )
+    }
 }
 
 internal fun resolveVideoContentTabBarLayoutSpec(widthDp: Int): VideoContentTabBarLayoutSpec {
@@ -476,6 +521,8 @@ fun VideoContentSection(
             }
     }
 
+    val pagerIsDragging by pagerState.interactionSource.collectIsDraggedAsState()
+    val pagerTabInteractionActive = pagerState.isScrollInProgress || pagerIsDragging
     val pagerTabIndicatorPosition by remember(pagerState) {
         derivedStateOf {
             resolveTopTabPagerPosition(
@@ -483,7 +530,7 @@ fun VideoContentSection(
                 pagerCurrentPage = pagerState.currentPage,
                 pagerTargetPage = pagerState.targetPage,
                 pagerCurrentPageOffsetFraction = pagerState.currentPageOffsetFraction,
-                pagerIsScrolling = pagerState.isScrollInProgress,
+                pagerIsScrolling = pagerTabInteractionActive,
             )
         }
     }
@@ -501,7 +548,7 @@ fun VideoContentSection(
                 tabs = tabs,
                 selectedTabIndex = pagerState.currentPage,
                 pagerIndicatorPosition = pagerTabIndicatorPosition,
-                pagerIsScrolling = pagerState.isScrollInProgress,
+                pagerIsScrolling = pagerTabInteractionActive,
                 onTabSelected = onTabSelected,
                 onDanmakuSendClick = onDanmakuSendClick,
                 danmakuEnabled = danmakuEnabled,
@@ -1394,13 +1441,30 @@ private fun VideoContentTabBar(
     val danmakuActionLayoutPolicy = remember(configuration.screenWidthDp) {
         resolveVideoContentTabBarDanmakuActionLayoutPolicy(widthDp = configuration.screenWidthDp)
     }
+    val liquidChromeSpec = remember(
+        homeSettings.androidNativeLiquidGlassEnabled,
+        backdrop,
+        layoutSpec
+    ) {
+        resolveVideoContentTabBarLiquidChromeSpec(
+            androidNativeLiquidGlassEnabled = homeSettings.androidNativeLiquidGlassEnabled,
+            hasBackdrop = backdrop != null,
+            layoutSpec = layoutSpec,
+        )
+    }
     Column(
         modifier = modifier
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
+                .then(
+                    if (liquidChromeSpec.useTransparentTabRowBackground) {
+                        Modifier
+                    } else {
+                        Modifier.background(MaterialTheme.colorScheme.surface)
+                    }
+                )
                 .padding(horizontal = layoutSpec.containerHorizontalPaddingDp.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1410,13 +1474,18 @@ private fun VideoContentTabBar(
                 onSelected = onTabSelected,
                 modifier = Modifier
                     .weight(layoutSpec.tabsRowWeight)
-                    .padding(start = 0.dp, top = 5.dp, end = 8.dp, bottom = 5.dp),
-                height = layoutSpec.segmentedControlHeightDp.dp,
-                indicatorHeight = layoutSpec.segmentedControlIndicatorHeightDp.dp,
+                    .padding(
+                        start = 0.dp,
+                        top = if (liquidChromeSpec.reusesLiquidGlassDock) 0.dp else 5.dp,
+                        end = 8.dp,
+                        bottom = if (liquidChromeSpec.reusesLiquidGlassDock) 0.dp else 5.dp,
+                    ),
+                height = liquidChromeSpec.segmentedControlHeightDp.dp,
+                indicatorHeight = liquidChromeSpec.segmentedControlIndicatorHeightDp.dp,
                 labelFontSize = layoutSpec.unselectedTabFontSizeSp.sp,
                 backdrop = backdrop,
                 forceLiquidChrome = homeSettings.androidNativeLiquidGlassEnabled,
-                liquidGlassEffectsEnabled = backdrop != null,
+                liquidGlassEffectsEnabled = liquidChromeSpec.liquidGlassEffectsEnabled,
                 tapPressRefractionEnabled = false,
                 pagerIndicatorPosition = pagerIndicatorPosition,
                 pagerIsScrolling = pagerIsScrolling,

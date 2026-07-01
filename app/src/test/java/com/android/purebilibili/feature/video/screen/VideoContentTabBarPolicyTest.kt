@@ -10,6 +10,22 @@ import kotlin.test.assertTrue
 class VideoContentTabBarPolicyTest {
 
     @Test
+    fun `liquid glass reuse upgrades video tab bar to bottom dock sizing`() {
+        val compactLayout = resolveVideoContentTabBarLayoutSpec(widthDp = 412)
+        val liquidSpec = resolveVideoContentTabBarLiquidChromeSpec(
+            androidNativeLiquidGlassEnabled = true,
+            hasBackdrop = true,
+            layoutSpec = compactLayout,
+        )
+
+        assertTrue(liquidSpec.reusesLiquidGlassDock)
+        assertEquals(58, liquidSpec.segmentedControlHeightDp)
+        assertEquals(54, liquidSpec.segmentedControlIndicatorHeightDp)
+        assertTrue(liquidSpec.liquidGlassEffectsEnabled)
+        assertTrue(liquidSpec.useTransparentTabRowBackground)
+    }
+
+    @Test
     fun `tab bar layout reserves trailing danmaku action area`() {
         val spec = resolveVideoContentTabBarLayoutSpec(widthDp = 412)
 
@@ -119,15 +135,18 @@ class VideoContentTabBarPolicyTest {
             "Pager must not capture backdrop; segmented controls inside would self-sample and overflow RenderThread stack on MIUI"
         )
         assertTrue(source.contains("forceLiquidChrome = homeSettings.androidNativeLiquidGlassEnabled"))
-        assertTrue(source.contains("liquidGlassEffectsEnabled = backdrop != null"))
+        assertTrue(source.contains("liquidChromeSpec.liquidGlassEffectsEnabled"))
+        assertTrue(source.contains("collectIsDraggedAsState()"))
+        assertTrue(source.contains("pagerTabInteractionActive"))
         assertTrue(source.contains("resolveTopTabPagerPosition("))
         assertTrue(source.contains("pagerIndicatorPosition = pagerTabIndicatorPosition"))
-        assertTrue(source.contains("pagerIsScrolling = pagerState.isScrollInProgress"))
+        assertTrue(source.contains("pagerIsScrolling = pagerTabInteractionActive"))
         val tabBarBlock = source
             .substringAfter("fun VideoContentTabBar(")
             .substringBefore("// [新增] 恢复画面按钮")
         assertTrue(tabBarBlock.contains("pagerIndicatorPosition = pagerIndicatorPosition"))
         assertTrue(tabBarBlock.contains("pagerIsScrolling = pagerIsScrolling"))
+        assertTrue(source.contains("resolveVideoContentTabBarLiquidChromeSpec("))
     }
 
     @Test

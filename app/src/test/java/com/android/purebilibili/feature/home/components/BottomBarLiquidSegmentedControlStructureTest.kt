@@ -329,6 +329,26 @@ class BottomBarLiquidSegmentedControlStructureTest {
     }
 
     @Test
+    fun `global android native reuse enables segmented liquid glass without bottom bar toggle`() {
+        assertTrue(
+            resolveSegmentedControlLiquidGlassEnabled(
+                storedLiquidGlassEnabled = false,
+                liquidGlassEffectsEnabled = true,
+                uiPreset = UiPreset.MD3,
+                androidNativeLiquidGlassEnabled = true,
+            )
+        )
+        assertFalse(
+            resolveSegmentedControlLiquidGlassEnabled(
+                storedLiquidGlassEnabled = false,
+                liquidGlassEffectsEnabled = true,
+                uiPreset = UiPreset.MD3,
+                androidNativeLiquidGlassEnabled = false,
+            )
+        )
+    }
+
+    @Test
     fun `segmented control follows pager position with liquid indicator deformation`() {
         assertEquals(
             0.4f,
@@ -363,7 +383,10 @@ class BottomBarLiquidSegmentedControlStructureTest {
         assertTrue(source.contains("resolveSegmentedControlEffectiveIndicatorPosition("))
         assertTrue(source.contains("resolveTopTabPagerVelocityItemsPerSecond("))
         assertTrue(source.contains("shouldDeformTopTabIndicator("))
-        assertTrue(source.contains("resolveTopTabIndicatorScaleProgress("))
+        assertTrue(source.contains("resolveSegmentedControlPagerInteractionProgress("))
+        assertTrue(source.contains("resolveSegmentedControlIndicatorPressProgress("))
+        assertTrue(source.contains("effectiveIndicatorPressProgress"))
+        assertTrue(source.contains("dragState.snapTo("))
     }
 
     @Test
