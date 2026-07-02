@@ -8,19 +8,12 @@ import kotlin.test.assertTrue
 class NativeVideoCardTransitionControllerStructureTest {
 
     @Test
-    fun openTransitionAnimatesHomeBackgroundBeforeCommittingNavigation() {
+    fun nativeTransitionNoLongerBlocksOpenNavigation() {
         val source = loadSource()
-        val startOpenBlock = source
-            .substringAfter("fun startOpen(")
-            .substringBefore("fun startClose(")
-        val validSourceBlock = startOpenBlock.substringAfter("if (isRunning) return")
 
-        val animateIndex = validSourceBlock.indexOf("animate(")
-        val navigateIndex = validSourceBlock.indexOf("navigateAction()")
-
-        assertTrue(animateIndex >= 0)
-        assertTrue(navigateIndex > animateIndex)
-        assertTrue(validSourceBlock.contains("onEnd = {"))
+        assertFalse(source.contains("fun startOpen("))
+        assertFalse(source.contains("NativeVideoCardTransitionOpenRequest"))
+        assertFalse(source.contains("OPEN_NAVIGATION_HANDOFF_DELAY_MS"))
     }
 
     @Test
@@ -34,14 +27,7 @@ class NativeVideoCardTransitionControllerStructureTest {
     }
 
     @Test
-    fun openNavigationHandoffDoesNotFreezeAtFullBlur() {
-        val source = loadSource()
-
-        assertTrue(source.contains("private const val OPEN_NAVIGATION_HANDOFF_DELAY_MS = 64L"))
-    }
-
-    @Test
-    fun nativeTransitionRendersBlackCardWithoutCoverBitmapPipeline() {
+    fun nativeTransitionRendersOnlyBackgroundEffects() {
         val controllerSource = loadSource()
         val overlaySource = loadOverlaySource()
 
@@ -51,6 +37,9 @@ class NativeVideoCardTransitionControllerStructureTest {
         assertFalse(overlaySource.contains("coverBitmap"))
         assertFalse(overlaySource.contains("drawCover("))
         assertFalse(overlaySource.contains("coverAlpha"))
+        assertFalse(overlaySource.contains("cardPaint"))
+        assertFalse(overlaySource.contains("drawRoundRect"))
+        assertFalse(overlaySource.contains("cardRect"))
     }
 
     private fun loadSource(): String {

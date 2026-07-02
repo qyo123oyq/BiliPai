@@ -114,6 +114,71 @@ class VideoSharedTransitionPolicyTest {
     }
 
     @Test
+    fun homeVideoCardShellContainerTransform_requiresHomeSourceAndBothScopes() {
+        assertTrue(
+            shouldUseHomeVideoCardShellContainerTransform(
+                sourceRoute = "home",
+                transitionEnabled = true,
+                hasSharedTransitionScope = true,
+                hasAnimatedVisibilityScope = true
+            )
+        )
+        assertTrue(
+            shouldUseHomeVideoCardShellContainerTransform(
+                sourceRoute = "home?tab=recommend",
+                transitionEnabled = true,
+                hasSharedTransitionScope = true,
+                hasAnimatedVisibilityScope = true
+            )
+        )
+        assertFalse(
+            shouldUseHomeVideoCardShellContainerTransform(
+                sourceRoute = "search",
+                transitionEnabled = true,
+                hasSharedTransitionScope = true,
+                hasAnimatedVisibilityScope = true
+            )
+        )
+        assertFalse(
+            shouldUseHomeVideoCardShellContainerTransform(
+                sourceRoute = "home",
+                transitionEnabled = false,
+                hasSharedTransitionScope = true,
+                hasAnimatedVisibilityScope = true
+            )
+        )
+        assertFalse(
+            shouldUseHomeVideoCardShellContainerTransform(
+                sourceRoute = "home",
+                transitionEnabled = true,
+                hasSharedTransitionScope = false,
+                hasAnimatedVisibilityScope = true
+            )
+        )
+    }
+
+    @Test
+    fun cardShellSharedBoundsHelperUsesCardShellKeyNotCoverKey() {
+        val helperSource = File(
+            "src/main/java/com/android/purebilibili/core/ui/transition/VideoCardShellSharedBounds.kt"
+        ).readText()
+
+        assertTrue(helperSource.contains("videoCardShellSharedElementKey("))
+        assertFalse(helperSource.contains("videoCoverSharedElementKey("))
+    }
+
+    @Test
+    fun videoDetailRootProvidesHomeCardShellSharedBoundsTarget() {
+        val detailSource = File(
+            "src/main/java/com/android/purebilibili/feature/video/screen/VideoDetailScreen.kt"
+        ).readText()
+
+        assertTrue(detailSource.contains("shouldUseHomeVideoCardShellContainerTransform("))
+        assertTrue(detailSource.contains("detailShellSharedBoundsEnabled"))
+        assertTrue(detailSource.contains("videoCardShellSharedBoundsOrEmpty("))
+    }
+
+    @Test
     fun videoCardSharedTransitionMotion_usesStandardCoverPrimaryTimelineByDefault() {
         val motion = resolveVideoCardSharedTransitionMotionSpec(
             sourceRoute = "home",

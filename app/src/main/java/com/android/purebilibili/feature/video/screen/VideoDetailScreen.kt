@@ -167,6 +167,8 @@ import com.android.purebilibili.core.ui.transition.resolveVideoSharedTransitionV
 import com.android.purebilibili.core.ui.transition.shouldEnableVideoCoverSharedTransition
 import com.android.purebilibili.core.ui.transition.shouldFadePlayerSurfaceOnDetailReturn
 import com.android.purebilibili.core.ui.transition.shouldUseDetailReturnCoverCrossfade
+import com.android.purebilibili.core.ui.transition.shouldUseHomeVideoCardShellContainerTransform
+import com.android.purebilibili.core.ui.transition.videoCardShellSharedBoundsOrEmpty
 import com.android.purebilibili.core.ui.transition.videoSharedElementBoundsTransformSpec
 import com.android.purebilibili.core.ui.rememberAppCollectionIcon
 import com.android.purebilibili.core.ui.rememberAppDownloadIcon
@@ -1713,20 +1715,36 @@ fun VideoDetailScreen(
     val isExitTransitionInProgress =
         rootAnimatedVisibilityScope?.transition?.targetState == EnterExitState.PostExit
     val rootSharedTransitionScope = LocalSharedTransitionScope.current
-    val sharedBoundsActive = shouldEnableVideoCoverSharedTransition(
+    val detailShellSharedBoundsEnabled = shouldUseHomeVideoCardShellContainerTransform(
+        sourceRoute = sourceRouteForSharedElement,
         transitionEnabled = transitionEnabled,
         hasSharedTransitionScope = rootSharedTransitionScope != null,
         hasAnimatedVisibilityScope = rootAnimatedVisibilityScope != null
+    )
+    val detailChildTransitionEnabled = transitionEnabled && !detailShellSharedBoundsEnabled
+    val coverSharedBoundsActive = shouldEnableVideoCoverSharedTransition(
+        transitionEnabled = detailChildTransitionEnabled,
+        hasSharedTransitionScope = rootSharedTransitionScope != null,
+        hasAnimatedVisibilityScope = rootAnimatedVisibilityScope != null
     ) && !sourceRouteForSharedElement.isNullOrBlank()
-    // Shell sharedBounds 不再包裹整页，仅用于 route sheet 禁用标记
-    val detailShellSharedBoundsEnabled = false
+    val sharedBoundsActive = detailShellSharedBoundsEnabled || coverSharedBoundsActive
     val routeSheetFrame = rememberVideoDetailRouteSheetFrame(
         motion = routeSheetMotion,
         isExitTransitionInProgress = isExitTransitionInProgress,
         sharedBoundsActive = sharedBoundsActive
     )
-    // Shell sharedBounds 已移除，cover 独立 sharedBounds 处理播放器 → 封面映射
-    val detailShellModifier = Modifier
+    val detailShellShape = remember(sharedTransitionSourceCornerDp) {
+        RoundedCornerShape(sharedTransitionSourceCornerDp.dp)
+    }
+    val detailShellModifier = Modifier.videoCardShellSharedBoundsOrEmpty(
+        enabled = detailShellSharedBoundsEnabled,
+        sharedTransitionScope = rootSharedTransitionScope,
+        animatedVisibilityScope = rootAnimatedVisibilityScope,
+        bvid = bvid,
+        sourceRoute = sourceRouteForSharedElement,
+        motionSpec = homeSharedTransitionMotionSpec,
+        clipShape = detailShellShape
+    )
     val coverTakeoverBeforeBackDelayMillis = remember {
         resolveCoverTakeoverDelayBeforeBackNavigationMillis()
     }
@@ -2994,7 +3012,7 @@ fun VideoDetailScreen(
                     uiState = uiState,
                     isFullscreen = true,
                     isInPipMode = isPipMode,
-                    transitionEnabled = transitionEnabled,
+                    transitionEnabled = detailChildTransitionEnabled,
                     onToggleFullscreen = { toggleFullscreen() },
                     onQualityChange = { qid -> viewModel.changeQuality(qid) },
                     onBack = { toggleFullscreen() },
@@ -3161,7 +3179,7 @@ fun VideoDetailScreen(
                                 handleTopBarAction(resolveVideoDetailTopBarAction(isHomeButton = true))
                             },
 
-                            transitionEnabled = transitionEnabled,  //  传递过渡动画开关
+                            transitionEnabled = detailChildTransitionEnabled,  //  传递过渡动画开关
                             // [New] Codec & Audio
                             currentCodec = codecPreference,
                             onCodecChange = { viewModel.setVideoCodec(it) },
@@ -3412,7 +3430,7 @@ fun VideoDetailScreen(
                         val isFullscreenTarget = activeVideoSharedTransitionVisualSpec.fillTargetViewport
                         val playerContainerModifier = if (
                             shouldEnableVideoCoverSharedTransition(
-                                transitionEnabled = transitionEnabled,
+                                transitionEnabled = detailChildTransitionEnabled,
                                 hasSharedTransitionScope = sharedTransitionScope != null,
                                 hasAnimatedVisibilityScope = animatedVisibilityScope != null
                             ) &&
@@ -3570,7 +3588,7 @@ fun VideoDetailScreen(
                                 playerState = playerState,
                                 uiState = uiState,
                                 isPipMode = isPipMode,
-                                transitionEnabled = transitionEnabled,
+                                transitionEnabled = detailChildTransitionEnabled,
                                 onToggleFullscreen = { toggleFullscreen() },
                                 viewModel = viewModel,
                                 onBack = handleBack,
@@ -3678,7 +3696,7 @@ fun VideoDetailScreen(
                                         danmakuEnabledForDetail = danmakuEnabledForDetail,
                                         isQuickReturnLimitedForSharedElements =
                                             isReturningFromDetail && isQuickReturningFromDetail,
-                                        transitionEnabled = transitionEnabled,
+                                        transitionEnabled = detailChildTransitionEnabled,
                                         sourceRouteForSharedElement = sourceRouteForSharedElement,
                                         favoriteFolders = favoriteFolders,
                                         isFavoriteFoldersLoading = isFavoriteFoldersLoading,

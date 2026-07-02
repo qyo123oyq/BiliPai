@@ -1037,7 +1037,6 @@ open class MainActivity : AppCompatActivity() {
         }
         val nativeVideoTransitionOverlay = NativeVideoCardTransitionOverlayView(this)
         val nativeVideoTransitionController = NativeVideoCardTransitionController(
-            context = this,
             contentView = composeContentView,
             overlayView = nativeVideoTransitionOverlay
         )

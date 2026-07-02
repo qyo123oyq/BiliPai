@@ -87,18 +87,25 @@ class AppNavigationNavigation3BridgeStructureTest {
     }
 
     @Test
-    fun homeVideoNativeTransitionOwnsDetailSharedElementAndPredictiveBackProgress() {
+    fun homeVideoUsesComposeCardShellContainerTransformWithNativeBackgroundOnly() {
         val source = appNavigationSource()
         val videoDetailBranch = source
             .substringAfter("BiliPaiNavEntryContentRole.VIDEO_DETAIL ->")
             .substringBefore("BiliPaiNavEntryContentRole.ARTICLE_DETAIL ->")
+        val homeVideoClickBlock = source
+            .substringAfter("fun navigateToHomeVideoInNavigation3(request: HomeVideoClickRequest)")
+            .substringBefore("fun navigateToFavoriteVideoInNavigation3")
         val navHostCall = source
             .substringAfter("BiliPaiNavDisplayHost(")
             .substringBefore(") { key ->")
 
-        assertTrue(source.contains("fun shouldUseNativeVideoCardTransition("))
+        assertTrue(source.contains("fun shouldUseNativeVideoBackgroundReturnEffect("))
+        assertFalse(source.contains("NativeVideoCardTransitionOpenRequest"))
+        assertFalse(homeVideoClickBlock.contains("startOpen("))
         assertFalse(source.contains("&&\n                            !intent.isVerticalVideo"))
-        assertTrue(videoDetailBranch.contains("!shouldUseNativeVideoCardTransition(videoKey)"))
+        assertFalse(videoDetailBranch.contains("!shouldUseNativeVideoCardTransition(videoKey)"))
+        assertFalse(videoDetailBranch.contains("!shouldUseNativeVideoBackgroundReturnEffect(videoKey)"))
+        assertTrue(videoDetailBranch.contains("transitionEnabled = shouldEnableVideoDetailSharedTransition("))
         assertTrue(videoDetailBranch.contains("nativeVideoBackPreviewVideoKey == videoKey.bvid"))
         assertTrue(videoDetailBranch.contains("alpha = if (hideVideoDetailForNativeBackPreview) 0f else 1f"))
         assertTrue(source.contains("previewNativeVideoBackProgress("))

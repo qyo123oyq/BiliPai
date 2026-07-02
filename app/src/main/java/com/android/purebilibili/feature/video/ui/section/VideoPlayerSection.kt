@@ -104,8 +104,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -132,8 +130,6 @@ import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransit
 import com.android.purebilibili.core.ui.transition.resolveVideoSharedTransitionPlaybackIntent
 import com.android.purebilibili.core.ui.transition.resolveVideoSharedTransitionSourceCornerDp
 import com.android.purebilibili.core.ui.transition.resolveVideoSharedTransitionVisualSpec
-import com.android.purebilibili.core.ui.transition.native.LocalNativeVideoCardTransitionController
-import com.android.purebilibili.core.ui.transition.native.NativeVideoTransitionRect
 import com.android.purebilibili.core.util.CardPositionManager
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.core.util.HapticType
@@ -1193,28 +1189,6 @@ fun VideoPlayerSection(
         .clipToBounds()
         .background(Color.Black)
         .hazeSourceCompat(overlayDrawerHazeState)
-    val nativeVideoTransitionController = LocalNativeVideoCardTransitionController.current
-    val nativeVideoTargetCornerRadiusPx = with(LocalDensity.current) { 12.dp.toPx() }
-    if (bvid.isNotBlank() && nativeVideoTransitionController != null) {
-        rootModifier = rootModifier.onGloballyPositioned { coordinates ->
-            val rect = coordinates.boundsInRoot()
-            nativeVideoTransitionController.reportTargetBounds(
-                videoKey = bvid,
-                rect = NativeVideoTransitionRect(
-                    left = rect.left,
-                    top = rect.top,
-                    right = rect.right,
-                    bottom = rect.bottom
-                ),
-                cornerRadiusPx = nativeVideoTargetCornerRadiusPx
-            )
-        }
-        DisposableEffect(bvid, nativeVideoTransitionController) {
-            onDispose {
-                nativeVideoTransitionController.clearTargetBounds(bvid)
-            }
-        }
-    }
 
     // 应用共享元素
     val livePlayerSharedElementEnabled = shouldEnableLivePlayerSharedElement(

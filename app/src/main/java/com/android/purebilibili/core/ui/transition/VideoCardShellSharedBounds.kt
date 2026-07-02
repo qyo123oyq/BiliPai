@@ -27,7 +27,7 @@ internal fun Modifier.videoCardShellSharedBoundsOrEmpty(
         with(sharedTransitionScope) {
             Modifier.sharedBounds(
                 sharedContentState = rememberSharedContentState(
-                    key = videoCoverSharedElementKey(
+                    key = videoCardShellSharedElementKey(
                         bvid = bvid,
                         sourceRoute = sourceRoute
                     )

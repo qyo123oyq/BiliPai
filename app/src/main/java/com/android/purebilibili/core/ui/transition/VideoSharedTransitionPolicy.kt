@@ -238,6 +238,16 @@ internal fun shouldUseVideoCardShellSharedBounds(
     return !sourceRoute?.substringBefore("?").isNullOrBlank()
 }
 
+internal fun shouldUseHomeVideoCardShellContainerTransform(
+    sourceRoute: String?,
+    transitionEnabled: Boolean,
+    hasSharedTransitionScope: Boolean,
+    hasAnimatedVisibilityScope: Boolean
+): Boolean {
+    if (!transitionEnabled || !hasSharedTransitionScope || !hasAnimatedVisibilityScope) return false
+    return sourceRoute?.substringBefore("?") == HOME_SOURCE_ROUTE
+}
+
 internal fun shouldEnableVideoMetadataSharedTransition(
     coverSharedEnabled: Boolean,
     isQuickReturnLimited: Boolean,

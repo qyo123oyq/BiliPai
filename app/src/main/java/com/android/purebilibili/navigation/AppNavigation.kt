@@ -92,7 +92,6 @@ import com.android.purebilibili.core.ui.transition.LocalVideoSharedTransitionSpe
 import com.android.purebilibili.core.ui.transition.VideoSharedTransitionSpeedSettings
 import com.android.purebilibili.core.ui.transition.native.LocalNativeVideoCardTransitionController
 import com.android.purebilibili.core.ui.transition.native.NativeVideoCardTransitionCloseRequest
-import com.android.purebilibili.core.ui.transition.native.NativeVideoCardTransitionOpenRequest
 import com.android.purebilibili.core.ui.transition.native.NativeVideoTransitionRect
 import com.android.purebilibili.data.model.response.BgmInfo
 
@@ -541,20 +540,14 @@ fun AppNavigation(
                 bottom = bounds.bottom
             ).takeIf { it.isUsable() }
         }
-        fun resolveLastClickedVideoSourceCornerRadiusPx(): Float {
-            val density = CardPositionManager.lastScreenDensity.takeIf { it > 0f } ?: 1f
-            return ((CardPositionManager.lastClickedVideoSourceCornerDp ?: 12).coerceAtLeast(0) * density)
-        }
         fun resolveNativeVideoCloseRequest(videoKey: BiliPaiNavKey.VideoDetail): NativeVideoCardTransitionCloseRequest? {
             if (videoKey.sourceRoute != ScreenRoutes.Home.route) return null
-            val sourceRect = resolveLastClickedHomeVideoSourceRect(videoKey.bvid) ?: return null
+            resolveLastClickedHomeVideoSourceRect(videoKey.bvid) ?: return null
             return NativeVideoCardTransitionCloseRequest(
-                videoKey = videoKey.bvid,
-                sourceRect = sourceRect,
-                sourceCornerRadiusPx = resolveLastClickedVideoSourceCornerRadiusPx()
+                videoKey = videoKey.bvid
             )
         }
-        fun shouldUseNativeVideoCardTransition(videoKey: BiliPaiNavKey.VideoDetail): Boolean {
+        fun shouldUseNativeVideoBackgroundReturnEffect(videoKey: BiliPaiNavKey.VideoDetail): Boolean {
             return nativeVideoCardTransitionController != null &&
                 resolveNativeVideoCloseRequest(videoKey) != null
         }
@@ -864,24 +857,7 @@ fun AppNavigation(
                                 sourceRoute = ScreenRoutes.Home.route
                             )
                         }
-                        val sourceRect = if (intent.source == HomeVideoClickSource.GRID) {
-                            resolveLastClickedHomeVideoSourceRect(intent.bvid)
-                        } else {
-                            null
-                        }
-                        val controller = nativeVideoCardTransitionController
-                        if (controller != null && sourceRect != null) {
-                            controller.startOpen(
-                                request = NativeVideoCardTransitionOpenRequest(
-                                    videoKey = intent.bvid,
-                                    sourceRect = sourceRect,
-                                    sourceCornerRadiusPx = resolveLastClickedVideoSourceCornerRadiusPx()
-                                ),
-                                navigateAction = navigateToVideo
-                            )
-                        } else {
-                            navigateToVideo()
-                        }
+                        navigateToVideo()
                     } else {
                         navigateToVideoRouteInNavigation3(
                             route = target.route,
@@ -1809,7 +1785,7 @@ fun AppNavigation(
                                     },
                                     transitionEnabled = shouldEnableVideoDetailSharedTransition(
                                         cardTransitionEnabled = cardTransitionEnabled
-                                    ) && !shouldUseNativeVideoCardTransition(videoKey),
+                                    ),
                                     transitionEnterDurationMillis = navMotionSpec.slowFadeDurationMillis,
                                     onBack = {
                                         popVideoDetailWithNativeTransition(

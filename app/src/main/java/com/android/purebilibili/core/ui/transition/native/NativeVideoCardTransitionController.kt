@@ -4,31 +4,15 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.view.animation.PathInterpolator
 import androidx.compose.runtime.staticCompositionLocalOf
 
-internal data class NativeVideoCardTransitionOpenRequest(
-    val videoKey: String,
-    val sourceRect: NativeVideoTransitionRect,
-    val sourceCornerRadiusPx: Float
-)
-
 internal data class NativeVideoCardTransitionCloseRequest(
-    val videoKey: String,
-    val sourceRect: NativeVideoTransitionRect,
-    val sourceCornerRadiusPx: Float
-)
-
-private data class NativeVideoCardTransitionTarget(
-    val rect: NativeVideoTransitionRect,
-    val cornerRadiusPx: Float
+    val videoKey: String
 )
 
 private data class ActiveCloseTransition(
@@ -40,78 +24,15 @@ internal val LocalNativeVideoCardTransitionController =
     staticCompositionLocalOf<NativeVideoCardTransitionController?> { null }
 
 internal class NativeVideoCardTransitionController(
-    private val context: Context,
     private val contentView: View,
     private val overlayView: NativeVideoCardTransitionOverlayView
 ) {
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val targetBounds = linkedMapOf<String, NativeVideoCardTransitionTarget>()
     private val interpolator = PathInterpolator(0.18f, 0.76f, 0.22f, 1f)
     private var animator: ValueAnimator? = null
     private var isRunning = false
     private var runningPhase: NativeVideoCardTransitionPhase? = null
     private var activeCloseTransition: ActiveCloseTransition? = null
     private var previewCloseProgress = 0f
-
-    fun reportTargetBounds(
-        videoKey: String,
-        rect: NativeVideoTransitionRect,
-        cornerRadiusPx: Float
-    ) {
-        if (videoKey.isBlank() || !rect.isUsable()) return
-        targetBounds[videoKey] = NativeVideoCardTransitionTarget(
-            rect = rect,
-            cornerRadiusPx = cornerRadiusPx.coerceAtLeast(0f)
-        )
-    }
-
-    fun clearTargetBounds(videoKey: String) {
-        targetBounds.remove(videoKey)
-    }
-
-    fun startOpen(
-        request: NativeVideoCardTransitionOpenRequest,
-        navigateAction: () -> Unit
-    ) {
-        if (!request.sourceRect.isUsable()) {
-            navigateAction()
-            return
-        }
-        if (isRunning) return
-
-        isRunning = true
-        runningPhase = NativeVideoCardTransitionPhase.Opening
-        cancelAnimatorOnly()
-        val target = resolveOpenTarget(request)
-        val spec = NativeVideoCardTransitionSpec(
-            sourceRect = request.sourceRect,
-            targetRect = target.rect,
-            sourceCornerRadiusPx = request.sourceCornerRadiusPx,
-            targetCornerRadiusPx = target.cornerRadiusPx
-        )
-        renderFrame(
-            resolveNativeVideoCardTransitionFrame(
-                spec = spec,
-                progress = 0f,
-                phase = NativeVideoCardTransitionPhase.Opening
-            )
-        )
-        animate(
-            spec = spec,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            onEnd = {
-                navigateAction()
-                mainHandler.postDelayed(
-                    {
-                        if (runningPhase == NativeVideoCardTransitionPhase.Opening) {
-                            clearTransitionState()
-                        }
-                    },
-                    OPEN_NAVIGATION_HANDOFF_DELAY_MS
-                )
-            }
-        )
-    }
 
     fun startClose(
         request: NativeVideoCardTransitionCloseRequest,
@@ -129,11 +50,6 @@ internal class NativeVideoCardTransitionController(
         }
         when (runningPhase) {
             NativeVideoCardTransitionPhase.Closing -> return
-            NativeVideoCardTransitionPhase.Opening -> {
-                cancel()
-                popAction()
-                return
-            }
             null -> Unit
         }
 
@@ -165,7 +81,6 @@ internal class NativeVideoCardTransitionController(
         progress: Float
     ): Boolean {
         val spec = resolveCloseSpec(request) ?: return false
-        if (runningPhase == NativeVideoCardTransitionPhase.Opening) return false
         val clampedProgress = progress.coerceIn(0f, 1f)
         val activeClose = activeCloseTransition
         if (activeClose?.videoKey != request.videoKey) {
@@ -269,8 +184,6 @@ internal class NativeVideoCardTransitionController(
 
     private fun renderFrame(frame: NativeVideoCardTransitionFrame) {
         overlayView.showFrame(frame)
-        contentView.scaleX = frame.contentScale
-        contentView.scaleY = frame.contentScale
         applyRenderEffect(frame.blurRadiusPx)
     }
 
@@ -292,8 +205,6 @@ internal class NativeVideoCardTransitionController(
         activeCloseTransition = null
         previewCloseProgress = 0f
         overlayView.clearFrame()
-        contentView.scaleX = 1f
-        contentView.scaleY = 1f
         clearRenderEffect()
     }
 
@@ -309,47 +220,9 @@ internal class NativeVideoCardTransitionController(
         animator = null
     }
 
-    private fun resolveOpenTarget(request: NativeVideoCardTransitionOpenRequest): NativeVideoCardTransitionTarget {
-        val viewportWidth = overlayView.width.takeIf { it > 0 }?.toFloat()
-            ?: contentView.width.toFloat()
-        val viewportHeight = overlayView.height.takeIf { it > 0 }?.toFloat()
-            ?: contentView.height.toFloat()
-        if (viewportWidth <= 1f || viewportHeight <= 1f) {
-            return NativeVideoCardTransitionTarget(
-                rect = request.sourceRect,
-                cornerRadiusPx = request.sourceCornerRadiusPx.coerceAtLeast(0f)
-            )
-        }
-        val (topInsetPx, bottomInsetPx) = resolveViewportInsetsPx()
-        val target = resolveNativeVideoCardTransitionTargetRect(
-            sourceRect = request.sourceRect,
-            viewportWidth = viewportWidth,
-            viewportHeight = viewportHeight,
-            topInsetPx = topInsetPx,
-            bottomInsetPx = bottomInsetPx
-        )
-        return NativeVideoCardTransitionTarget(
-            rect = target.rect,
-            cornerRadiusPx = target.cornerRadiusDp.coerceAtLeast(0f) * context.resources.displayMetrics.density
-        )
-    }
-
-    @Suppress("DEPRECATION")
-    private fun resolveViewportInsetsPx(): Pair<Float, Float> {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return 0f to 0f
-        val insets = overlayView.rootWindowInsets ?: contentView.rootWindowInsets ?: return 0f to 0f
-        return insets.systemWindowInsetTop.toFloat() to insets.systemWindowInsetBottom.toFloat()
-    }
-
     private fun resolveCloseSpec(request: NativeVideoCardTransitionCloseRequest): NativeVideoCardTransitionSpec? {
-        val playerTarget = targetBounds[request.videoKey]
-        if (!request.sourceRect.isUsable() || playerTarget == null) return null
-        return NativeVideoCardTransitionSpec(
-            sourceRect = playerTarget.rect,
-            targetRect = request.sourceRect,
-            sourceCornerRadiusPx = playerTarget.cornerRadiusPx,
-            targetCornerRadiusPx = request.sourceCornerRadiusPx
-        )
+        if (request.videoKey.isBlank()) return null
+        return NativeVideoCardTransitionSpec()
     }
 
     private fun resolveRemainingDurationMillis(startProgress: Float, endProgress: Float): Long {
@@ -360,7 +233,6 @@ internal class NativeVideoCardTransitionController(
     }
 
     companion object {
-        private const val OPEN_NAVIGATION_HANDOFF_DELAY_MS = 64L
         private const val MIN_TRANSITION_DURATION_MILLIS = 80L
     }
 }

@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 
@@ -14,10 +13,6 @@ internal class NativeVideoCardTransitionOverlayView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
-    }
-    private val cardRect = RectF()
 
     private var frame: NativeVideoCardTransitionFrame? = null
 
@@ -49,14 +44,5 @@ internal class NativeVideoCardTransitionOverlayView @JvmOverloads constructor(
             scrimPaint.color = Color.argb((currentFrame.scrimAlpha * 255).toInt(), 0, 0, 0)
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), scrimPaint)
         }
-
-        val rect = currentFrame.cardRect
-        cardRect.set(rect.left, rect.top, rect.right, rect.bottom)
-        canvas.drawRoundRect(
-            cardRect,
-            currentFrame.cornerRadiusPx,
-            currentFrame.cornerRadiusPx,
-            cardPaint
-        )
     }
 }

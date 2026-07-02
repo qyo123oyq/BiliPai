@@ -1,113 +1,14 @@
 package com.android.purebilibili.core.ui.transition.native
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class NativeVideoCardTransitionPolicyTest {
 
-    private val sourceRect = NativeVideoTransitionRect(
-        left = 24f,
-        top = 120f,
-        right = 224f,
-        bottom = 240f
-    )
-    private val targetRect = NativeVideoTransitionRect(
-        left = 0f,
-        top = 88f,
-        right = 360f,
-        bottom = 290f
-    )
-    private val spec = NativeVideoCardTransitionSpec(
-        sourceRect = sourceRect,
-        targetRect = targetRect,
-        sourceCornerRadiusPx = 18f,
-        targetCornerRadiusPx = 4f,
-        maxBlurRadiusPx = 28f
-    )
+    private val spec = NativeVideoCardTransitionSpec(maxBlurRadiusPx = 28f)
 
     @Test
-    fun progressInterpolatesSourceAndTargetRects() {
-        val start = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 0f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 35
-        )
-        val middle = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 0.5f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 35
-        )
-        val end = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 1f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 35
-        )
-
-        assertEquals(sourceRect, start.cardRect)
-        assertEquals(NativeVideoTransitionRect(12f, 104f, 292f, 265f), middle.cardRect)
-        assertEquals(targetRect, end.cardRect)
-    }
-
-    @Test
-    fun progressInterpolatesCornerRadius() {
-        val start = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 0f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 35
-        )
-        val middle = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 0.5f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 35
-        )
-        val end = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 1f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 35
-        )
-
-        assertEquals(18f, start.cornerRadiusPx)
-        assertEquals(11f, middle.cornerRadiusPx)
-        assertEquals(4f, end.cornerRadiusPx)
-    }
-
-    @Test
-    fun api31OpeningBlurBuildsUpAndStaysForNavigationHandoff() {
-        val start = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 0f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 31
-        )
-        val middle = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 0.5f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 31
-        )
-        val end = resolveNativeVideoCardTransitionFrame(
-            spec = spec,
-            progress = 1f,
-            phase = NativeVideoCardTransitionPhase.Opening,
-            sdkInt = 31
-        )
-
-        assertEquals(0f, start.blurRadiusPx)
-        assertTrue(middle.blurRadiusPx > start.blurRadiusPx)
-        assertEquals(28f, end.blurRadiusPx, 0.0001f)
-        assertTrue(middle.scrimAlpha > start.scrimAlpha)
-        assertTrue(middle.contentScale < start.contentScale)
-    }
-
-    @Test
-    fun api31ClosingBlurClearsAsCardReturnsToSource() {
+    fun api31ReturnBackgroundBlurClearsAsHomeBecomesVisible() {
         val start = resolveNativeVideoCardTransitionFrame(
             spec = spec,
             progress = 0f,
@@ -127,58 +28,50 @@ class NativeVideoCardTransitionPolicyTest {
             sdkInt = 31
         )
 
-        assertEquals(28f, start.blurRadiusPx, 0.0001f)
-        assertTrue(middle.blurRadiusPx < start.blurRadiusPx)
-        assertEquals(0f, end.blurRadiusPx, 0.0001f)
+        assertTrue(start.blurRadiusPx > middle.blurRadiusPx)
+        assertTrue(middle.blurRadiusPx > end.blurRadiusPx)
+        assertTrue(start.scrimAlpha > middle.scrimAlpha)
+        assertTrue(middle.scrimAlpha > end.scrimAlpha)
     }
 
     @Test
-    fun api30KeepsBlurDisabledButStillAppliesScrimAndScale() {
+    fun nativeFrameOnlyDescribesBlurAndScrim() {
         val middle = resolveNativeVideoCardTransitionFrame(
             spec = spec,
             progress = 0.5f,
-            phase = NativeVideoCardTransitionPhase.Opening,
+            phase = NativeVideoCardTransitionPhase.Closing,
+            sdkInt = 31
+        )
+
+        assertTrue(middle.blurRadiusPx > 0f)
+        assertTrue(middle.scrimAlpha > 0f)
+    }
+
+    @Test
+    fun api30KeepsBlurDisabledButStillAppliesScrim() {
+        val middle = resolveNativeVideoCardTransitionFrame(
+            spec = spec,
+            progress = 0.5f,
+            phase = NativeVideoCardTransitionPhase.Closing,
             sdkInt = 30
         )
 
-        assertEquals(0f, middle.blurRadiusPx)
+        kotlin.test.assertEquals(0f, middle.blurRadiusPx)
         assertTrue(middle.scrimAlpha > 0f)
-        assertTrue(middle.contentScale < 1f)
     }
 
     @Test
-    fun defaultMidProgressCreatesReferenceLikeBackgroundCompression() {
+    fun defaultMidProgressKeepsBackgroundBlurAndScrimVisible() {
         val middle = resolveNativeVideoCardTransitionFrame(
             spec = NativeVideoCardTransitionSpec(
-                sourceRect = sourceRect,
-                targetRect = targetRect,
-                sourceCornerRadiusPx = 18f,
-                targetCornerRadiusPx = 4f
+                maxBlurRadiusPx = NATIVE_VIDEO_CARD_TRANSITION_MAX_BLUR_RADIUS_PX
             ),
             progress = 0.5f,
-            phase = NativeVideoCardTransitionPhase.Opening,
+            phase = NativeVideoCardTransitionPhase.Closing,
             sdkInt = 35
         )
 
-        assertTrue(middle.blurRadiusPx >= 44f)
-        assertTrue(middle.scrimAlpha >= 0.3f)
-        assertTrue(middle.contentScale <= 0.94f)
-    }
-
-    @Test
-    fun portraitTargetRectCreatesCenteredTallBlackCardWithinSafeArea() {
-        val target = resolveNativeVideoCardTransitionTargetRect(
-            sourceRect = sourceRect,
-            viewportWidth = 500f,
-            viewportHeight = 1080f,
-            topInsetPx = 48f,
-            bottomInsetPx = 28f
-        )
-
-        assertEquals(55f, target.rect.left, 0.001f)
-        assertEquals(149.16666f, target.rect.top, 0.001f)
-        assertEquals(445f, target.rect.right, 0.001f)
-        assertEquals(950.8333f, target.rect.bottom, 0.001f)
-        assertEquals(22f, target.cornerRadiusDp)
+        assertTrue(middle.blurRadiusPx > 0f)
+        assertTrue(middle.scrimAlpha > 0f)
     }
 }
