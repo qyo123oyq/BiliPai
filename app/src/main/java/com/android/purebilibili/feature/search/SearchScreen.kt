@@ -99,6 +99,7 @@ import com.android.purebilibili.core.ui.components.shouldUseNativeMiuixSearchBar
 import top.yukonga.miuix.kmp.basic.InputField
 import com.android.purebilibili.feature.home.components.cards.ElegantVideoCard  //  使用首页卡片
 import com.android.purebilibili.feature.home.resolveHomeFeedCardLayout
+import com.android.purebilibili.feature.home.resolveReturnAnimationSuppressionDurationMs
 import com.android.purebilibili.core.store.HomeFeedCardStyle
 import com.android.purebilibili.core.store.SettingsManager  //  读取动画设置
 import com.android.purebilibili.data.repository.SearchOrder
@@ -159,6 +160,18 @@ internal fun resolveSearchTopBarLayoutSpec(): SearchTopBarLayoutSpec {
         placeholderMaxLines = 1
     )
 }
+
+internal const val SEARCH_TOP_BAR_VERTICAL_PADDING_DP = 16
+
+internal fun resolveSearchTopBarRowMinHeightDp(
+    inputHeightDp: Int,
+    verticalPaddingDp: Int = SEARCH_TOP_BAR_VERTICAL_PADDING_DP
+): Int = maxOf(64, inputHeightDp + verticalPaddingDp)
+
+internal fun shouldOmitSearchInputLeadingIcon(
+    uiPreset: UiPreset,
+    usesMiuixSearchInput: Boolean
+): Boolean = uiPreset == UiPreset.MD3 && !usesMiuixSearchInput
 
 internal fun resolveSearchTopBarHeaderColor(
     surfaceColor: Color,
@@ -517,7 +530,8 @@ fun SearchScreen(
     entryMotionKey: Int = 0,
     onEntryMotionConsumed: (Int) -> Unit = {},
     isReturningFromVideoDetail: Boolean = false,
-    isQuickReturningFromVideoDetail: Boolean = false
+    isQuickReturningFromVideoDetail: Boolean = false,
+    onVideoDetailReturnAnimationConsumed: () -> Unit = {}
 ) {
     val uiPreset = LocalUiPreset.current
     val androidNativeVariant = LocalAndroidNativeVariant.current
@@ -703,6 +717,17 @@ fun SearchScreen(
         motionBudget = effectiveSearchMotionBudget,
         isReturningFromVideoDetail = isReturningFromVideoDetail
     )
+    val returnAnimationSuppressionDurationMs = resolveReturnAnimationSuppressionDurationMs(
+        isTabletLayout = windowSizeClass.isTablet,
+        cardAnimationEnabled = cardAnimationEnabled,
+        cardTransitionEnabled = cardTransitionEnabled,
+        isQuickReturnFromDetail = isQuickReturningFromVideoDetail
+    )
+    LaunchedEffect(returnAnimationSuppressionDurationMs, isReturningFromVideoDetail) {
+        if (!isReturningFromVideoDetail) return@LaunchedEffect
+        kotlinx.coroutines.delay(returnAnimationSuppressionDurationMs)
+        onVideoDetailReturnAnimationConsumed()
+    }
     val forceLowBudgetSearchHeaderBlur = remember(state.isSearching, isSearchResultsScrolling) {
         shouldForceLowBudgetSearchHeaderBlur(
             isSearching = state.isSearching,
@@ -1662,6 +1687,13 @@ fun SearchTopBar(
         resolveSearchChromeVisualSpec(uiPreset, androidNativeVariant)
     }
     val usesMiuixSearchInput = shouldUseNativeMiuixSearchBar(uiPreset, androidNativeVariant)
+    val omitSearchInputLeadingIcon = shouldOmitSearchInputLeadingIcon(
+        uiPreset = uiPreset,
+        usesMiuixSearchInput = usesMiuixSearchInput
+    )
+    val topBarRowMinHeightDp = remember(chromeSpec.inputHeightDp) {
+        resolveSearchTopBarRowMinHeightDp(chromeSpec.inputHeightDp)
+    }
     val searchInteractionSource = remember { MutableInteractionSource() }
     val isSearchFieldFocused by searchInteractionSource.collectIsFocusedAsState()
     val backIcon = rememberAppBackIcon()
@@ -1756,7 +1788,7 @@ fun SearchTopBar(
             Row(
                 modifier = Modifier
                     .responsiveContentWidth()
-                    .height(64.dp)
+                    .heightIn(min = topBarRowMinHeightDp.dp)
                     .padding(horizontal = 12.dp, vertical = 8.dp)
                     .padding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal).asPaddingValues()),
                 verticalAlignment = Alignment.CenterVertically
@@ -1784,7 +1816,7 @@ fun SearchTopBar(
                         onExpandedChange = {},
                         modifier = Modifier
                             .weight(1f)
-                            .height(chromeSpec.inputHeightDp.dp),
+                            .defaultMinSize(minHeight = chromeSpec.inputHeightDp.dp),
                         label = placeholder,
                         interactionSource = searchInteractionSource,
                     )
@@ -1794,28 +1826,32 @@ fun SearchTopBar(
                         onValueChange = onQueryChange,
                         modifier = Modifier
                             .weight(1f)
-                            .height(chromeSpec.inputHeightDp.dp)
+                            .defaultMinSize(minHeight = chromeSpec.inputHeightDp.dp)
                             .focusRequester(focusRequester)
                             .onFocusChanged { isFocused = it.isFocused },
                         placeholder = {
                             Text(
                                 text = placeholder,
                                 maxLines = layoutSpec.placeholderMaxLines,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.bodyLarge
                             )
                         },
-                        leadingIcon = {
-                            Icon(
-                                searchIcon,
-                                contentDescription = searchLabel,
-                                tint = searchIconColor,
-                                modifier = Modifier.size(chromeSpec.actionIconSizeDp.dp)
-                            )
+                        leadingIcon = if (omitSearchInputLeadingIcon) {
+                            null
+                        } else {
+                            {
+                                Icon(
+                                    searchIcon,
+                                    contentDescription = searchLabel,
+                                    tint = searchIconColor,
+                                    modifier = Modifier.size(chromeSpec.actionIconSizeDp.dp)
+                                )
+                            }
                         },
                         singleLine = true,
-                        textStyle = TextStyle(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 15.sp
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurface
                         ),
                         shape = RoundedCornerShape(chromeSpec.inputCornerRadiusDp.dp),
                         colors = OutlinedTextFieldDefaults.colors(
